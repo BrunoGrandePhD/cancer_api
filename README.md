@@ -1,3 +1,3 @@
 # cancergen
 
-cancergen is a Python module that serves to handle and store data typically encountered in cancer genomics. This includes mutation data, patients, tissue samples and related libraries. The structure of this module is to represent each entity by a Python class/model, which can optionally be stored in a database using peewee, a simple ORM for Python. 
+cancergen is a Python package that serves to handle and store cancer genomics data. The package is organized by submodule, and each of these submodules contain classes for representing various entities encountered in cancer genomics. For instance, the `annotations` submodule defines classes for genes, transcripts, exons and proteins, while the `mutations` submodules defines classes for SNVs, SVs and CNVs. 
