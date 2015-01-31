@@ -1,13 +1,12 @@
-from nose import with_setup
 from nose.tools import *
-from cancergen import database
+import cancergen
 
 
 class test_database(object):
 
     @classmethod
     def setup_class(cls):
-        cls.db_cnx = database.MysqlConnection(host="localhost", user="admin",
+        cls.db_cnx = cancergen.MysqlConnection(host="localhost", user="admin",
                                                password="Perl$nPython",
                                                database="cancergen_tests_db")
         cls.db_cnx.create_tables()
