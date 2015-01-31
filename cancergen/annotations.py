@@ -10,12 +10,13 @@ class Gene(Base):
     __tablename__ = "gene"
 
     id = Column(Integer, primary_key=True)
-    ensembl_id = Column(String(length=50))
+    gene_ensembl_id = Column(String(length=50))
     gene_symbol = Column(String(length=50))
     biotype = Column(String(length=50))
-    chr = Column(String(length=50))
-    pos_start = Column(Integer)
-    pos_end = Column(Integer)
+    chrom = Column(String(length=50))
+    start_pos = Column(Integer)
+    end_pos = Column(Integer)
+    length = Column(Integer)
 
 
 class Transcript(Base):
@@ -23,27 +24,33 @@ class Transcript(Base):
     __tablename__ = "transcript"
 
     id = Column(Integer, primary_key=True)
-    ensembl_id = Column(String(length=50))
+    transcript_ensembl_id = Column(String(length=50))
     gene_id = Column(Integer, ForeignKey("gene.id"))
+    cds_start_pos = Column(Integer)
+    cds_end_pos = Column(Integer)
     length = Column(Integer)
-    cds_start = Column(Integer)
-    cds_end = Column(Integer)
+
+    gene = relationship("Gene", backref="transcripts")
 
 class Exon(Base):
     """Model for exon annotations"""
     __tablename__ = "exon"
 
     id = Column(Integer, primary_key=True)
-    ensembl_id = Column(String(length=50))
+    exon_ensembl_id = Column(String(length=50))
     gene_id = Column(Integer, ForeignKey("gene.id"))
     transcript_id = Column(Integer, ForeignKey("transcript.id"))
-    transcript_start = Column(Integer)
-    transcript_end = Column(Integer)
-    genomic_start = Column(Integer)
-    genomic_end = Column(Integer)
+    transcript_start_pos = Column(Integer)
+    transcript_end_pos = Column(Integer)
+    genome_start_pos = Column(Integer)
+    genome_end_pos = Column(Integer)
+    length = Column(Integer)
     strand = Column(Enum("+", "-"))
     phase = Column(Enum("-1", "0", "1", "2"))
     end_phase = Column(Enum("-1", "0", "1", "2"))
+
+    gene = relationship("Gene", backref="exons")
+    gene = relationship("Transcript", backref="exons")
 
 
 class Protein(Base):
@@ -51,7 +58,10 @@ class Protein(Base):
     __tablename__ = "protein"
 
     id = Column(Integer, primary_key=True)
-    ensembl_id = Column(String(length=50))
+    protein_ensembl_id = Column(String(length=50))
     gene_id = Column(Integer, ForeignKey("gene.id"))
     transcript_id = Column(Integer, ForeignKey("transcript.id"))
-    length = Column(Integer)
+    nucl_length = Column(Integer)
+
+    gene = relationship("Gene", backref="proteins")
+    gene = relationship("Transcript", backref="proteins")

@@ -11,10 +11,10 @@ class Mutation(Base):
 
     id = Column(Integer, primary_key=True)
     library_id = Column(Integer, ForeignKey("library.id"))
-    discriminator = Column("type", String(50))
+    mutation_type = Column(String(50))
     status = Column(Enum("somatic", "germline", "artifact", "unknown"))
 
-    __mapper_args__ = {"polymorphic_on": discriminator}
+    __mapper_args__ = {"polymorphic_on": mutation_type}
 
     library = relationship("Library", backref="mutations")
 
@@ -26,7 +26,7 @@ class SingleNucleotideVariant(Mutation):
     __tablename__ = "snv"
 
     id = Column(Integer, ForeignKey("mutation.id"), primary_key=True)
-    chr = Column(String(length=50))
+    chrom = Column(String(length=50))
     pos = Column(Integer)
     ref_allele = Column(String(length=1))
     alt_allele = Column(String(length=1))
@@ -39,10 +39,10 @@ class StructuralVariation(Mutation):
     __tablename__ = "sv"
 
     id = Column(Integer, ForeignKey("mutation.id"), primary_key=True)
-    chr1 = Column(String(length=50))
+    chrom1 = Column(String(length=50))
     pos1 = Column(Integer)
     strand1 = Column(String(length=1))
-    chr2 = Column(String(length=50))
+    chrom2 = Column(String(length=50))
     pos2 = Column(Integer)
     strand2 = Column(String(length=1))
     sv_type = Column(Enum("translocation", "inversion", "insertion", "deletion", "duplication"))
@@ -56,9 +56,9 @@ class CopyNumberVariation(Mutation):
     __tablename__ = "cnv"
 
     id = Column(Integer, ForeignKey("mutation.id"), primary_key=True)
-    chr = Column(String(length=50))
-    pos_start = Column(Integer)
-    pos_end = Column(Integer)
+    chrom = Column(String(length=50))
+    start_pos = Column(Integer)
+    end_pos = Column(Integer)
     size = Column(Integer)
     fold_change = Column(Float)
     copy_state = Column(Integer)

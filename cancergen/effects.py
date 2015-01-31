@@ -11,8 +11,8 @@ class Effect(Base):
 
     id = Column(Integer, primary_key=True)
     mutation_id = Column(Integer, ForeignKey("mutation.id"))
-    type = Column(String(50))
+    effect_type = Column(String(50))
 
-    __mapper_args__ = {"polymorphic_on": type}
+    __mapper_args__ = {"polymorphic_on": effect_type}
 
     mutation = relationship("Mutation", backref="effects")

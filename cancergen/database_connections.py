@@ -33,7 +33,7 @@ class DatabaseConnection(object):
         """Starts session and returns it for with statements"""
         return self.start_session()
 
-    def __exit__(self):
+    def __exit__(self ,type, value, traceback):
         """Closes session on exit of with statement"""
         return self.close_session()
 
