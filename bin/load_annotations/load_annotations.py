@@ -75,12 +75,12 @@ def main():
     # For gene table
     gene_cache_filename = os.path.join(
         args.cache_dir, 'ensembl_genes_78.homo_sapiens.GRCh37.tsv')
-    ## If cache_dir specified, check there first
+    # If cache_dir specified, check there first
     if args.cache_dir and os.path.exists(gene_cache_filename):
         logging.info('Loading gene data from cache...')
         with open(gene_cache_filename) as gene_cache:
             gene_data = gene_cache.read()
-    ## Otherwise, download data from Ensembl
+    # Otherwise, download data from Ensembl
     else:
         logging.info('Downloading gene data from Ensembl...')
         gene_query_filename = 'gene_query.xml'
@@ -92,7 +92,7 @@ def main():
             logging.info('Caching gene data in output directory...')
             with open(gene_cache_filename, 'w') as gene_cache:
                 gene_cache.write(gene_data)
-    ## Load data in database
+    # Load data in database
     logging.info('Loading gene data into database...')
     gene_counter = 0
     for row_dict in data_gen(gene_data, GENE_FIELDNAMES):
@@ -117,12 +117,12 @@ def main():
     # For transcript and exon tables
     exon_cache_filename = os.path.join(
         args.cache_dir, 'ensembl_transcripts_and_exons_78.homo_sapiens.GRCh37.tsv')
-    ## If cache_dir specified, check there first
+    # If cache_dir specified, check there first
     if args.cache_dir and os.path.exists(exon_cache_filename):
         logging.info('Loading transcript and exon data from cache...')
         with open(exon_cache_filename) as exon_cache:
             exon_data = exon_cache.read()
-    ## Otherwise, download data from Ensembl
+    # Otherwise, download data from Ensembl
     else:
         logging.info('Downloading transcript and exon data from Ensembl...')
         exon_query_filename = 'exon_query.xml'
@@ -134,9 +134,9 @@ def main():
             logging.info('Caching transcript and exon data in output directory...')
             with open(exon_cache_filename, 'w') as exon_cache:
                 exon_cache.write(exon_data)
-    ## Load data in database
+    # Load data in database
     logging.info('Loading transcript and exon data into database...')
-    ### Organize exons by transcript
+    # Organize exons by transcript
     transcripts = defaultdict(lambda: {'exons': []})
     for row_dict in data_gen(exon_data, EXON_FIELDNAMES):
         # Each row_dict has the following keys (see EXON_FIELDNAMES):
@@ -152,8 +152,8 @@ def main():
         })
 
         # Calculate some values for the exon depending on UTRs
-        ## Check if there's a UTR and if so, calculate its length
-        ## Also, calculate transcript start or end (incl. UTRs)
+        # Check if there's a UTR and if so, calculate its length
+        # Also, calculate transcript start or end (incl. UTRs)
         utr_length = 0
         exon_length = int(row_dict['exon_chrom_end']) - int(row_dict['exon_chrom_start']) + 1
         # If there is a 5' UTR and coding region in the exon
@@ -210,9 +210,9 @@ def main():
             'cdna_coding_start': row_dict['cdna_coding_start'],
             'cdna_coding_end': row_dict['cdna_coding_end']
         })
-    ### Now that all exons are organized by transcript,
-    ### iterate through transcripts, add transcript to database
-    ### and then add all its exons
+    # Now that all exons are organized by transcript,
+    # iterate through transcripts, add transcript to database
+    # and then add all its exons
     transcript_counter = 0
     exon_counter = 0
     for transcript_dict in transcripts.values():
@@ -244,34 +244,34 @@ def main():
     logging.info('Finished loading {} transcripts into the database.'.format(transcript_counter))
     logging.info('Finished loading {} exons into the database.'.format(exon_counter))
 
-    # # For protein table
+    # For protein table
     # protein_cache_filename = os.path.join(
     #     args.cache_dir, 'ensembl_proteins_78.homo_sapiens.GRCh37.tsv')
-    # ## If cache_dir specified, check there first
+    # If cache_dir specified, check there first
     # if args.cache_dir and os.path.exists(protein_cache_filename):
     #     logging.info('Loading gene data from cache...')
     #     with open(protein_cache_filename) as protein_cache:
     #         protein_data = protein_cache.read()
-    # ## Otherwise, download data from Ensembl
+    # Otherwise, download data from Ensembl
     # else:
     #     logging.info('Downloading protein data from Ensembl...')
     #     protein_query_filename = 'protein_query.xml'
     #     protein_query = get_xml_query(protein_query_filename)
     #     protein_data = query_biomart_api(BIOMART_API_URL, protein_query)
-    #     # If the cache_dir was specified, but the data was downloaded,
-    #     # cache the data
+    # If the cache_dir was specified, but the data was downloaded,
+    # cache the data
     #     if args.cache_dir:
     #         logging.info('Caching protein data in output directory...')
     #         with open(protein_cache_filename, 'w') as protein_cache:
     #             protein_cache.write(protein_data)
-    # ## Load data in database
+    # Load data in database
     # logging.info('Loading protein data into database...')
     # protein_counter = 0
     # for row_dict in data_gen(protein_data, PROTEIN_FIELDNAMES):
-    #     # Each row_dict has the following keys (see PROTEIN_FIELDNAMES)
-    #     # 'ensembl_peptide_id', 'ensembl_transcript_id', 'cds_length'
+    # Each row_dict has the following keys (see PROTEIN_FIELDNAMES)
+    # 'ensembl_peptide_id', 'ensembl_transcript_id', 'cds_length'
 
-    #     # Only consider proteins with an Ensembl ID and length
+    # Only consider proteins with an Ensembl ID and length
     #     if row_dict['ensembl_peptide_id'] == '' or row_dict['cds_length'] == '':
     #         continue
 
@@ -284,7 +284,7 @@ def main():
     #     protein_counter += 1
     # logging.info('Finished loading {} proteins into the database.'.format(protein_counter))
 
-    # # For protein_region table
+    # For protein_region table
     # logging.warning('Did not load data into the protein_region table. Not implemented yet.')
 
     # Clean up
