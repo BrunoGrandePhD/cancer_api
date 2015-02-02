@@ -26,7 +26,20 @@ class BaseMixin(object):
         # Create string for filter
         pass
         # Check if instance already exists based on unique_kwargs
-        session.query(cls).filter
+        results = session.query(cls).filter_by(**unique_kwargs)
+        if len(results) > 1:
+            # Ambiguous unique instances
+            raise MultipleUniqueInstancesError(
+                "More than one instance returned when looking for unique instance.")
+        elif len(results) == 1:
+            # Instance already exists, so return it
+            instance = results
+        elif len(results) == 0:
+            # Instance doesn't already exist, so create a new one
+            instance = cls(**kwargs)
+            session.add(instance)
+            session.commit()
+        return instance
 
 
 Base = declarative_base(cls=BaseMixin)
