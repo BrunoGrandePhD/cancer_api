@@ -18,6 +18,8 @@ class Gene(Base):
     end_pos = Column(Integer)
     length = Column(Integer)
 
+    unique_on = ["gene_ensembl_id"]
+
 
 class Transcript(Base):
     """Model for transcript annotations"""
