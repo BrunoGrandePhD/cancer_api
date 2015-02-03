@@ -95,7 +95,7 @@ def main():
     # Load data in database
     logging.info('Loading gene data into database...')
     gene_counter = 0
-    for row_dict in data_gen(gene_data, GENE_FIELDNAMES):
+    for row_dict in iter_data(gene_data, GENE_FIELDNAMES):
         # Each row_dict has the following keys (see GENE_FIELDNAMES)
         # 'ensembl_gene_id', 'hgnc_symbol', 'gene_biotype', 'external_gene_name',
         # 'chromosome_name', 'start_position', 'end_position'
@@ -107,9 +107,11 @@ def main():
             'chrom': row_dict['chromosome_name'],
             'start_pos': row_dict['start_position'],
             'end_pos': row_dict['end_position']
+            'length': row_dict['end_position'] - row_dict['start_position'] + 1
         }
-        gene = cancergen.Gene(**gene_dict)
-        db_session.add(gene)
+        # gene = cancergen.Gene(**gene_dict)
+        # db_session.add(gene)
+        cancergen.Gene.get_or_create(db_session, **gene_dict)
         gene_counter += 1
     db_session.commit()
     logging.info('Finished loading {} genes into the database.'.format(gene_counter))
@@ -138,7 +140,7 @@ def main():
     logging.info('Loading transcript and exon data into database...')
     # Organize exons by transcript
     transcripts = defaultdict(lambda: {'exons': []})
-    for row_dict in data_gen(exon_data, EXON_FIELDNAMES):
+    for row_dict in iter_data(exon_data, EXON_FIELDNAMES):
         # Each row_dict has the following keys (see EXON_FIELDNAMES):
         # 'ensembl_exon_id', 'ensembl_transcript_id', 'ensembl_gene_id', 'strand', 'phase',
         # '5_utr_start', '5_utr_end', 'cdna_coding_start', 'cdna_coding_end', '3_utr_start',
@@ -161,7 +163,7 @@ def main():
             utr_length = int(row_dict['5_utr_end']) - int(row_dict['5_utr_start']) + 1
             transcript_start = int(row_dict['cdna_coding_start']) - utr_length
             transcript_end = int(row_dict['cdna_coding_end'])
-            end_phase = (int(row_dict['phase']) + exon_length) % 3
+            end_phase = str((int(row_dict['phase']) + exon_length) % 3)
         # If there is only a 5' UTR in the exon
         elif row_dict['5_utr_start'] and not row_dict['cdna_coding_start']:
             continue
@@ -170,7 +172,7 @@ def main():
             utr_length = int(row_dict['3_utr_end']) - int(row_dict['3_utr_start']) + 1
             transcript_start = int(row_dict['cdna_coding_start'])
             transcript_end = int(row_dict['cdna_coding_end']) + utr_length
-            end_phase = -1
+            end_phase = "-1"
         # If there is only a 3' UTR in the exon
         elif row_dict['3_utr_start'] and not row_dict['cdna_coding_start']:
             continue
@@ -181,7 +183,7 @@ def main():
             utr3_length = int(row_dict['3_utr_end']) - int(row_dict['3_utr_start']) + 1
             transcript_start = int(row_dict['cdna_coding_start']) - utr5_length
             transcript_end = int(row_dict['cdna_coding_end']) + utr3_length
-            end_phase = -1
+            end_phase = "-1"
         # If there is only a 5' UTR and 3' UTR in the exon
         elif (row_dict['5_utr_start'] and row_dict['3_utr_start'] and
                 not row_dict['cdna_coding_start']):
@@ -191,7 +193,7 @@ def main():
                 row_dict['cdna_coding_start']):
             transcript_start = int(row_dict['cdna_coding_start'])
             transcript_end = int(row_dict['cdna_coding_end'])
-            end_phase = (int(row_dict['phase']) + exon_length) % 3
+            end_phase = str((int(row_dict['phase']) + exon_length) % 3)
         # If there is no UTR and no coding region
         else:
             continue
@@ -203,10 +205,10 @@ def main():
             'phase': row_dict['phase'],
             'end_phase': end_phase,
             'length': exon_length,
-            'transcript_start': transcript_start,
-            'transcript_end': transcript_end,
+            'transcript_start_pos': transcript_start,
+            'transcript_end_pos': transcript_end,
             'genome_start_pos': row_dict['exon_chrom_start'],
-            'genome_end_pod': row_dict['exon_chrom_end'],
+            'genome_end_pos': row_dict['exon_chrom_end'],
             'cdna_coding_start': row_dict['cdna_coding_start'],
             'cdna_coding_end': row_dict['cdna_coding_end']
         })
@@ -220,72 +222,86 @@ def main():
         # (Probably because they didn't contain a coding region)
         if len(transcript_dict['exons']) == 0:
             continue
-        # Obtain cds_start, cds_end and length from exons
+        # Obtain cds_start, cds_end and length from exons and then remove them from dict
         transcript_dict['cds_start_pos'] = min(
             [int(exon['cdna_coding_start']) for exon in transcript_dict['exons']])
         transcript_dict['cds_end_pos'] = max(
             [int(exon['cdna_coding_end']) for exon in transcript_dict['exons']])
         transcript_dict['length'] = sum(
             [int(exon['length']) for exon in transcript_dict['exons']])
+        exons = transcript_dict.pop("exons")
+
+        # Obtain gene ID for given gene Ensembl ID
+        gene_ensembl_id = transcript_dict.pop("gene_ensembl_id")
+        gene_id, = db_session.query(cancergen.Gene.id).filter_by(
+            gene_ensembl_id=gene_ensembl_id).first()
+        transcript_dict["gene_id"] = gene_id
 
         # Add transcript to database
-        print transcript_dict
-        transcript = cancergen.Transcript(**transcript_dict)
+        transcript = cancergen.Transcript.get_or_create(db_session, **transcript_dict)
         db_session.add(transcript)
         db_session.commit()
+        transcript_id = transcript.id
         transcript_counter += 1
 
         # Iterate over exons and add them to database using transcript ID
-        for exon in transcript_dict['exons']:
-            exon['transcript_id'] = transcript.id
-            exon = cancergen.Exon(**exon)
+        for exon in exons:
+            exon.pop("cdna_coding_start")
+            exon.pop("cdna_coding_end")
+            exon["gene_id"] = gene_id
+            exon["transcript_id"] = transcript_id
+            exon = cancergen.Exon.get_or_create(db_session, **exon)
             db_session.add(exon)
             exon_counter += 1
+    db_session.commit()
     logging.info('Finished loading {} transcripts into the database.'.format(transcript_counter))
     logging.info('Finished loading {} exons into the database.'.format(exon_counter))
 
     # For protein table
-    # protein_cache_filename = os.path.join(
-    #     args.cache_dir, 'ensembl_proteins_78.homo_sapiens.GRCh37.tsv')
+    protein_cache_filename = os.path.join(
+        args.cache_dir, 'ensembl_proteins_78.homo_sapiens.GRCh37.tsv')
     # If cache_dir specified, check there first
-    # if args.cache_dir and os.path.exists(protein_cache_filename):
-    #     logging.info('Loading gene data from cache...')
-    #     with open(protein_cache_filename) as protein_cache:
-    #         protein_data = protein_cache.read()
+    if args.cache_dir and os.path.exists(protein_cache_filename):
+        logging.info('Loading gene data from cache...')
+        with open(protein_cache_filename) as protein_cache:
+            protein_data = protein_cache.read()
     # Otherwise, download data from Ensembl
-    # else:
-    #     logging.info('Downloading protein data from Ensembl...')
-    #     protein_query_filename = 'protein_query.xml'
-    #     protein_query = get_xml_query(protein_query_filename)
-    #     protein_data = query_biomart_api(BIOMART_API_URL, protein_query)
+    else:
+        logging.info('Downloading protein data from Ensembl...')
+        protein_query_filename = 'protein_query.xml'
+        protein_query = get_xml_query(protein_query_filename)
+        protein_data = query_biomart_api(BIOMART_API_URL, protein_query)
     # If the cache_dir was specified, but the data was downloaded,
     # cache the data
-    #     if args.cache_dir:
-    #         logging.info('Caching protein data in output directory...')
-    #         with open(protein_cache_filename, 'w') as protein_cache:
-    #             protein_cache.write(protein_data)
+        if args.cache_dir:
+            logging.info('Caching protein data in output directory...')
+            with open(protein_cache_filename, 'w') as protein_cache:
+                protein_cache.write(protein_data)
     # Load data in database
-    # logging.info('Loading protein data into database...')
-    # protein_counter = 0
-    # for row_dict in data_gen(protein_data, PROTEIN_FIELDNAMES):
-    # Each row_dict has the following keys (see PROTEIN_FIELDNAMES)
-    # 'ensembl_peptide_id', 'ensembl_transcript_id', 'cds_length'
-
-    # Only consider proteins with an Ensembl ID and length
-    #     if row_dict['ensembl_peptide_id'] == '' or row_dict['cds_length'] == '':
-    #         continue
-
-    #     protein_dict = {
-    #         'ensembl_protein_id': row_dict['ensembl_peptide_id'],
-    #         'length': int(row_dict['cds_length']),
-    #         'ensembl_transcript_id': row_dict['ensembl_transcript_id']
-    #     }
-    #     db_cnx.addProtein(**protein_dict)
-    #     protein_counter += 1
-    # logging.info('Finished loading {} proteins into the database.'.format(protein_counter))
+    logging.info('Loading protein data into database...')
+    protein_counter = 0
+    for row_dict in iter_data(protein_data, PROTEIN_FIELDNAMES):
+        # Only consider proteins with an Ensembl ID and length
+        if row_dict['ensembl_peptide_id'] == '' or row_dict['cds_length'] == '':
+            continue
+        # Obtain related transcript
+        transcript = db_session.query(cancergen.Transcript).filter_by(
+            transcript_ensembl_id=row_dict['ensembl_transcript_id']).first()
+        transcript_id = transcript.id
+        gene_id = transcript.gene_id
+        protein_dict = {
+            'protein_ensembl_id': row_dict['ensembl_peptide_id'],
+            'cds_length': int(row_dict['cds_length']),
+            'transcript_id': transcript_id,
+            'gene_id': gene_id
+        }
+        cancergen.Protein.get_or_create(db_session, **protein_dict)
+        protein_counter += 1
+    db_session.commit()
+    logging.info('Finished loading {} proteins into the database.'.format(protein_counter))
 
     # For protein_region table
-    # logging.warning('Did not load data into the protein_region table. Not implemented yet.')
+    logging.warning('Did not load data into the protein_region table. Not implemented yet.')
 
     # Clean up
     db_cnx.close_session()
@@ -318,7 +334,7 @@ def query_biomart_api(biomart_url, xml_query):
                 response.status_code, response.url))
 
 
-def data_gen(response, fieldnames):
+def iter_data(response, fieldnames):
     """Parses the BioMart data as a generator."""
     for line in response.split('\n'):
         # If line is empty, skip
