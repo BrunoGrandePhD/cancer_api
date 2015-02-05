@@ -33,6 +33,8 @@ class SingleNucleotideVariant(Mutation):
     ref_count = Column(Integer)
     alt_count = Column(Integer)
 
+    mutation = relationship("Mutation", backref="snv")
+
 
 class StructuralVariation(Mutation):
     """Model for structural variations"""
@@ -46,6 +48,8 @@ class StructuralVariation(Mutation):
     pos2 = Column(Integer)
     strand2 = Column(String(length=1))
     sv_type = Column(Enum("translocation", "inversion", "insertion", "deletion", "duplication"))
+
+    mutation = relationship("Mutation", backref="sv")
 
 
 class CopyNumberVariation(Mutation):
@@ -62,3 +66,5 @@ class CopyNumberVariation(Mutation):
     size = Column(Integer)
     fold_change = Column(Float)
     copy_state = Column(Integer)
+
+    mutation = relationship("Mutation", backref="cnv")
