@@ -106,8 +106,8 @@ def main():
             'biotype': row_dict['gene_biotype'],
             'chrom': row_dict['chromosome_name'],
             'start_pos': row_dict['start_position'],
-            'end_pos': row_dict['end_position']
-            'length': row_dict['end_position'] - row_dict['start_position'] + 1
+            'end_pos': row_dict['end_position'],
+            'length': int(row_dict['end_position']) - int(row_dict['start_position']) + 1
         }
         # gene = cancergen.Gene(**gene_dict)
         # db_session.add(gene)
@@ -216,7 +216,7 @@ def main():
     # iterate through transcripts, add transcript to database
     # and then add all its exons
     transcript_counter = 0
-    exon_counter = 0
+    all_exons = []
     for transcript_dict in transcripts.values():
         # Skip transcripts that contain no exons
         # (Probably because they didn't contain a coding region)
@@ -240,19 +240,25 @@ def main():
         # Add transcript to database
         transcript = cancergen.Transcript.get_or_create(db_session, **transcript_dict)
         db_session.add(transcript)
-        db_session.commit()
-        transcript_id = transcript.id
         transcript_counter += 1
 
-        # Iterate over exons and add them to database using transcript ID
         for exon in exons:
-            exon.pop("cdna_coding_start")
-            exon.pop("cdna_coding_end")
-            exon["gene_id"] = gene_id
-            exon["transcript_id"] = transcript_id
-            exon = cancergen.Exon.get_or_create(db_session, **exon)
-            db_session.add(exon)
-            exon_counter += 1
+            exon['transcript'] = transcript
+            all_exons.append(exon)
+    # Commit all transcripts in order to get IDs
+    db_session.commit()
+    # Iterate over all_exons and add them to database using transcript ID
+    # Now that the transcripts have IDs
+    exon_counter = 0
+    for exon in all_exons:
+        exon.pop("cdna_coding_start")
+        exon.pop("cdna_coding_end")
+        transcript = exon.pop("transcript")
+        exon["transcript_id"] = transcript.id
+        exon["gene_id"] = transcript.gene_id
+        exon = cancergen.Exon.get_or_create(db_session, **exon)
+        db_session.add(exon)
+        exon_counter += 1
     db_session.commit()
     logging.info('Finished loading {} transcripts into the database.'.format(transcript_counter))
     logging.info('Finished loading {} exons into the database.'.format(exon_counter))
