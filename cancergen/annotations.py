@@ -20,6 +20,11 @@ class Gene(Base):
 
     unique_on = ["gene_ensembl_id"]
 
+    @classmethod
+    def iter_genes_in_region(cls, session, chrom, start_pos, end_pos):
+        """Iterator for genes in a given genomic region."""
+        pass
+
 
 class Transcript(Base):
     """Model for transcript annotations"""
