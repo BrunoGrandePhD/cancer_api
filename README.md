@@ -27,7 +27,9 @@ Additionally, an assortment of scripts that make use of the OncoPy framework and
 
 ### Dependencies
 
-* SQLAlchemy (tested on v0.9.8)
+OncoPy's dependencies should be downloaded and installed automatically during the installation steps below. 
+
+* SQLAlchemy (tested with v0.9.8)
 
 ### Installation Steps
 
