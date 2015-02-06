@@ -1,3 +1,5 @@
+__version__ = "0.1"
+
 from connections import MysqlConnection, SqliteConnection
 from mutations import SingleNucleotideVariant, CopyNumberVariation, StructuralVariation
 from metadata import Patient, Sample, Library
