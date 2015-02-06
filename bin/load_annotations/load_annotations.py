@@ -83,9 +83,7 @@ def main():
     # Otherwise, download data from Ensembl
     else:
         logging.info('Downloading gene data from Ensembl...')
-        gene_query_filename = 'gene_query.xml'
-        gene_query = get_xml_query(gene_query_filename)
-        gene_data = query_biomart_api(BIOMART_API_URL, gene_query)
+        gene_data = query_biomart_api(BIOMART_API_URL, GENE_QUERY)
         # If the cache_dir was specified, but the data was downloaded,
         # cache the data
         if args.cache_dir:
@@ -127,9 +125,7 @@ def main():
     # Otherwise, download data from Ensembl
     else:
         logging.info('Downloading transcript and exon data from Ensembl...')
-        exon_query_filename = 'exon_query.xml'
-        exon_query = get_xml_query(exon_query_filename)
-        exon_data = query_biomart_api(BIOMART_API_URL, exon_query)
+        exon_data = query_biomart_api(BIOMART_API_URL, EXON_QUERY)
         # If the cache_dir was specified, but the data was downloaded,
         # cache the data
         if args.cache_dir:
@@ -274,9 +270,7 @@ def main():
     # Otherwise, download data from Ensembl
     else:
         logging.info('Downloading protein data from Ensembl...')
-        protein_query_filename = 'protein_query.xml'
-        protein_query = get_xml_query(protein_query_filename)
-        protein_data = query_biomart_api(BIOMART_API_URL, protein_query)
+        protein_data = query_biomart_api(BIOMART_API_URL, PROTEIN_QUERY)
     # If the cache_dir was specified, but the data was downloaded,
     # cache the data
         if args.cache_dir:
@@ -314,19 +308,6 @@ def main():
     logging.info('Finished loading Ensembl reference data into database.')
 
 
-def get_xml_query(query_filename):
-    """Retrieves the XML query from a given query filename.
-    Returns the properly formatted (encoded) XML query.
-    """
-    # Figure out the directory where this script is located
-    script_path = os.path.dirname(os.path.realpath(__file__))
-    # Open query file in that path, read query and format it
-    with open(os.path.join(script_path, query_filename)) as query_file:
-        xml_query = query_file.read()
-        xml_query = xml_query.replace('\n', '')
-    return xml_query
-
-
 def query_biomart_api(biomart_url, xml_query):
     """Sends an XML query to a specified BioMart web service.
     Returns body of HTTP response.
@@ -348,6 +329,63 @@ def iter_data(response, fieldnames):
             continue
         row_dict = dict(zip(fieldnames, line.split('\t')))
         yield row_dict
+
+
+GENE_QUERY = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Query>
+<Query  virtualSchemaName = "default" formatter = "TSV" header = "0" uniqueRows = "1"
+        count = "" datasetConfigVersion = "0.6" >
+    <Dataset name = "hsapiens_gene_ensembl" interface = "default" >
+        <Attribute name = "ensembl_gene_id" />
+        <Attribute name = "hgnc_symbol" />
+        <Attribute name = "gene_biotype" />
+        <Attribute name = "external_gene_name" />
+        <Attribute name = "chromosome_name" />
+        <Attribute name = "start_position" />
+        <Attribute name = "end_position" />
+    </Dataset>
+</Query>
+"""
+
+
+EXON_QUERY = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Query>
+<Query  virtualSchemaName = "default" formatter = "TSV" header = "0" uniqueRows = "1"
+        count = "" datasetConfigVersion = "0.6" >
+    <Dataset name = "hsapiens_gene_ensembl" interface = "default" >
+        <Attribute name = "ensembl_exon_id" />
+        <Attribute name = "ensembl_transcript_id" />
+        <Attribute name = "ensembl_gene_id" />
+        <Attribute name = "strand" />
+        <Attribute name = "phase" />
+        <Attribute name = "5_utr_start" />
+        <Attribute name = "5_utr_end" />
+        <Attribute name = "cdna_coding_start" />
+        <Attribute name = "cdna_coding_end" />
+        <Attribute name = "3_utr_start" />
+        <Attribute name = "3_utr_end" />
+        <Attribute name = "cds_start" />
+        <Attribute name = "cds_end" />
+        <Attribute name = "genomic_coding_start" />
+        <Attribute name = "genomic_coding_end" />
+        <Attribute name = "exon_chrom_start" />
+        <Attribute name = "exon_chrom_end" />
+    </Dataset>
+</Query>
+"""
+
+
+PROTEIN_QUERY = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Query>
+<Query  virtualSchemaName = "default" formatter = "TSV" header = "0" uniqueRows = "1"
+        count = "" datasetConfigVersion = "0.6" >
+    <Dataset name = "hsapiens_gene_ensembl" interface = "default" >
+        <Attribute name = "ensembl_peptide_id" />
+        <Attribute name = "ensembl_transcript_id" />
+        <Attribute name = "cds_length" />
+    </Dataset>
+</Query>
+"""
 
 
 if __name__ == '__main__':
