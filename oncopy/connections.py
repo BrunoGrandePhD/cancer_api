@@ -16,7 +16,7 @@ class DatabaseConnection(object):
         try:
             self._session
         except AttributeError:
-            raise NotConnectedToDatabase("Database connection needed. See cancergen.connect().")
+            raise NotConnectedToDatabase("Database connection needed. See oncopy.connect().")
         return self._session
 
     @session.setter

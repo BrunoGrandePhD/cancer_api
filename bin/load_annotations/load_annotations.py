@@ -21,7 +21,7 @@ Known Issues
 """
 
 import argparse
-import cancergen
+import oncopy
 import os
 import requests
 from collections import defaultdict
@@ -61,7 +61,7 @@ def main():
 
     # Establish connection with cancer_db instance
     logging.info('Connecting to cancer database...')
-    db_cnx = cancergen.MysqlConnection(args.db_host, args.db_user, args.db_password, args.db_name)
+    db_cnx = oncopy.MysqlConnection(args.db_host, args.db_user, args.db_password, args.db_name)
     db_cnx.create_tables()
     db_session = db_cnx.start_session()
 
@@ -109,9 +109,9 @@ def main():
             'end_pos': row_dict['end_position'],
             'length': int(row_dict['end_position']) - int(row_dict['start_position']) + 1
         }
-        # gene = cancergen.Gene(**gene_dict)
+        # gene = oncopy.Gene(**gene_dict)
         # db_session.add(gene)
-        cancergen.Gene.get_or_create(db_session, **gene_dict)
+        oncopy.Gene.get_or_create(db_session, **gene_dict)
         gene_counter += 1
     db_session.commit()
     logging.info('Finished loading {} genes into the database.'.format(gene_counter))
@@ -233,12 +233,12 @@ def main():
 
         # Obtain gene ID for given gene Ensembl ID
         gene_ensembl_id = transcript_dict.pop("gene_ensembl_id")
-        gene_id, = db_session.query(cancergen.Gene.id).filter_by(
+        gene_id, = db_session.query(oncopy.Gene.id).filter_by(
             gene_ensembl_id=gene_ensembl_id).first()
         transcript_dict["gene_id"] = gene_id
 
         # Add transcript to database
-        transcript = cancergen.Transcript.get_or_create(db_session, **transcript_dict)
+        transcript = oncopy.Transcript.get_or_create(db_session, **transcript_dict)
         db_session.add(transcript)
         transcript_counter += 1
 
@@ -256,7 +256,7 @@ def main():
         transcript = exon.pop("transcript")
         exon["transcript_id"] = transcript.id
         exon["gene_id"] = transcript.gene_id
-        exon = cancergen.Exon.get_or_create(db_session, **exon)
+        exon = oncopy.Exon.get_or_create(db_session, **exon)
         db_session.add(exon)
         exon_counter += 1
     db_session.commit()
@@ -291,7 +291,7 @@ def main():
         if row_dict['ensembl_peptide_id'] == '' or row_dict['cds_length'] == '':
             continue
         # Obtain related transcript
-        transcript = db_session.query(cancergen.Transcript).filter_by(
+        transcript = db_session.query(oncopy.Transcript).filter_by(
             transcript_ensembl_id=row_dict['ensembl_transcript_id']).first()
         transcript_id = transcript.id
         gene_id = transcript.gene_id
@@ -301,7 +301,7 @@ def main():
             'transcript_id': transcript_id,
             'gene_id': gene_id
         }
-        cancergen.Protein.get_or_create(db_session, **protein_dict)
+        oncopy.Protein.get_or_create(db_session, **protein_dict)
         protein_counter += 1
     db_session.commit()
     logging.info('Finished loading {} proteins into the database.'.format(protein_counter))

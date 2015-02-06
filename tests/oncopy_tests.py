@@ -1,14 +1,16 @@
 from nose.tools import *
-import cancergen
+import oncopy
 
 
-class test_database(object):
+class test_database_connection(object):
 
     @classmethod
     def setup_class(cls):
-        cls.db_cnx = cancergen.MysqlConnection(host="localhost", user="admin",
-                                               password="Perl$nPython",
-                                               database="cancergen_tests_db")
+        cls.db_cnx = oncopy.MysqlConnection(
+            host="localhost",
+            user="admin",
+            password="Perl$nPython",
+            database="oncopy_tests_db")
         cls.db_cnx.create_tables()
         cls.session = cls.db_cnx.start_session()
 
