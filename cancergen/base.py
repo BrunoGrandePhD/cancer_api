@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
-from sqlalchemy import text
 from sqlalchemy.ext.declarative import declarative_base
 from exceptions import *
-import time
 
 
 class BaseMixin(object):

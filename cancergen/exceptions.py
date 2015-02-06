@@ -18,3 +18,10 @@ class MultipleUniqueInstancesError(CancergenException):
     multiple were returned.
     """
     pass
+
+
+class NotConnectedToDatabase(CancergenException):
+    """A database connection is needed for running
+    this method.
+    """
+    pass

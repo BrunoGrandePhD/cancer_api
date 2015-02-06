@@ -1,6 +1,5 @@
-from database_connections import *
-from base import *
-from mutations import *
-from metadata import *
-from annotations import *
-from effects import *
+from connections import MysqlConnection, SqliteConnection
+from mutations import SingleNucleotideVariant, CopyNumberVariation, StructuralVariation
+from metadata import Patient, Sample, Library
+from annotations import Gene, Transcript, Exon, Protein
+from main import connect, connection
