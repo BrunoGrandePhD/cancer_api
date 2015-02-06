@@ -1,5 +1,6 @@
 # OncoPy
 ## A Python Framework and API for Cancer Genomics
+[![Build Status](https://travis-ci.org/brunogrande/OncoPy.svg?branch=master)](https://travis-ci.org/brunogrande/OncoPy)
 
 OncoPy is a Python package that serves to provide a framework and API for handling and storing cancer genomics data and metadata. Essentially, OncoPy consists of a set of Python classes that serve to model entities encountered in cancer genomics research. This includes patients, samples, various mutation types and the effects of these mutations, just to name a few. 
 
@@ -21,6 +22,20 @@ for line in vcf_file:
 ```
 
 Additionally, an assortment of scripts that make use of the OncoPy framework and API are provided as part of this repository in `bin`. These can perform a variety of tasks, such as populating the database with reference annotations (_e.g._ genes, transcripts, etc.).
+
+## Installation
+
+### Dependencies
+
+* SQLAlchemy (tested on v0.9.8)
+
+### Installation Steps
+
+```bash
+git clone https://github.com/brunogrande/OncoPy.git
+cd OncoPy
+python setup.py install
+```
 
 ## Future Plans
 
