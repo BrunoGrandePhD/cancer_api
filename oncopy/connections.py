@@ -8,8 +8,9 @@ from exceptions import NotConnectedToDatabase
 class DatabaseConnection(object):
     """Base class for database connections"""
 
-    def __init__(self, url):
-        self.engine = create_engine(url)
+    def __init__(self, url=None):
+        if url:
+            self.engine = create_engine(url)
 
     @property
     def session(self):
@@ -23,6 +24,15 @@ class DatabaseConnection(object):
     def session(self, value):
         self._session = value
 
+    @session.deleter
+    def session(self):
+        self.close()
+        del self._session
+
+    def close(self):
+        """Close database connection"""
+        self._session.close()
+
     def create_tables(self):
         """Creates all tables according to base"""
         Base.metadata.create_all(self.engine)
@@ -30,6 +40,12 @@ class DatabaseConnection(object):
     def drop_tables(self):
         """Creates all tables according to base"""
         Base.metadata.drop_all(self.engine)
+
+    def __repr__(self):
+        return str(vars(self))
+
+    def __str__(self):
+        return str(vars(self))
 
 
 class MysqlConnection(DatabaseConnection):
