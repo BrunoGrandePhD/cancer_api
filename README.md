@@ -6,16 +6,18 @@ Moreover, these models are built upon SQLAlchemy, which readily enables the use 
 
 The OncoPy API was designed to be easy to use. To get started with a database, you simply connect, create your tables and you're ready to populate your database. Assuming a `parse_vcf` function that creates a dictionary of key-value pairs corresponding to the parameters of the `oncopy.SingleNucleotideVariant` class, the following code shows how SNVs could easily be stored in a MySQL database. 
 
-    import oncopy
-    oncopy.connect(MysqlConnection(
-        host="localhost", 
-        user="oncopyfan", 
-        password="oncopyrocks!", 
-        database="cancer_project"))
-    for line in vcf_file:
-        row_dict = parse_vcf(line)
-        snv = oncopy.SingleNucleotideVariant(**row_dict)
-        snv.save()
+```python
+import oncopy
+oncopy.connect(MysqlConnection(
+    host="localhost", 
+    user="oncopyfan", 
+    password="oncopyrocks!", 
+    database="cancer_project"))
+for line in vcf_file:
+    row_dict = parse_vcf(line)
+    snv = oncopy.SingleNucleotideVariant(**row_dict)
+    snv.save()
+```
 
 ## Future Plans
 
