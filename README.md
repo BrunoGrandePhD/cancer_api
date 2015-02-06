@@ -1,4 +1,4 @@
-# OncoPy
+# OncoPy - A Python API for Cancer Genomics
 
 OncoPy is a Python package that serves to provide an API for handling and storing cancer genomics data and metadata. Essentially, OncoPy consists of a set of Python classes that serve to model entities encountered in cancer genomics research. This includes patients, samples, various mutation types and the effects of these mutations. 
 
