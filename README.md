@@ -1,6 +1,6 @@
 # Cancer_API
 ## A Python Framework and API for Cancer Genomics
-[![Build Status](https://travis-ci.org/brunogrande/Cancer_API.svg?branch=master)](https://travis-ci.org/brunogrande/Cancer_API)
+[![Build Status](https://travis-ci.org/brunogrande/cancer_api.svg?branch=master)](https://travis-ci.org/brunogrande/cancer_api)
 
 Cancer_API is a Python package that serves to provide a framework and API for handling and storing cancer genomics data and metadata. Essentially, Cancer_API consists of a set of Python classes that serve to model entities encountered in cancer genomics research. This includes patients, samples, various mutation types and the effects of these mutations, just to name a few. 
 
