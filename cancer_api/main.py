@@ -18,7 +18,7 @@ class App(object):
             self._connection
         except AttributeError:
             raise NotConnectedToDatabase("Database connection needed. "
-                                         "See `oncopy.connect` function")
+                                         "See `cancer_api.connect` function")
         return self._connection
 
     @connection.setter
@@ -40,7 +40,7 @@ class App(object):
     @session.setter
     def session(self, value):
         raise IllegalVariableDefinition("Please define the `session` by connecting to a "
-                                        "database using the `oncopy.connect` function.")
+                                        "database using the `cancer_api.connect` function.")
 
 
 # Instantiate an instance of the App class, which will store

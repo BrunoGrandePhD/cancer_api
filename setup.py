@@ -1,17 +1,17 @@
 #! /usr/bin/env python
 
 from setuptools import setup
-import oncopy
+import cancer_api
 
 setup(
-    name='oncopy',
-    version=oncopy.__version__,
+    name='cancer_api',
+    version=cancer_api.__version__,
     description='A Python framework and API for handling and storing cancer genomics data and metadata.',
-    url='https://github.com/brunogrande/OncoPy',
+    url='https://github.com/brunogrande/Cancer_API',
     author='Bruno Grande',
     author_email='bgrande@sfu.ca',
     license='MIT',
-    packages=['oncopy'],
+    packages=['cancer_api'],
     install_requires=[
         'SQLAlchemy==0.9.8'],
     zip_safe=False

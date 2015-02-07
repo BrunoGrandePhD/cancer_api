@@ -1,44 +1,44 @@
-# OncoPy
+# Cancer_API
 ## A Python Framework and API for Cancer Genomics
-[![Build Status](https://travis-ci.org/brunogrande/OncoPy.svg?branch=master)](https://travis-ci.org/brunogrande/OncoPy)
+[![Build Status](https://travis-ci.org/brunogrande/Cancer_API.svg?branch=master)](https://travis-ci.org/brunogrande/Cancer_API)
 
-OncoPy is a Python package that serves to provide a framework and API for handling and storing cancer genomics data and metadata. Essentially, OncoPy consists of a set of Python classes that serve to model entities encountered in cancer genomics research. This includes patients, samples, various mutation types and the effects of these mutations, just to name a few. 
+Cancer_API is a Python package that serves to provide a framework and API for handling and storing cancer genomics data and metadata. Essentially, Cancer_API consists of a set of Python classes that serve to model entities encountered in cancer genomics research. This includes patients, samples, various mutation types and the effects of these mutations, just to name a few. 
 
-Moreover, these models are built upon SQLAlchemy, which readily enables the use of a database backend to store all of this data and metadata. Much of the relationships between various entities (_e.g._ samples relating to a patient, effects relating to a mutation) are already handled by OncoPy such that the user doesn't have to.
+Moreover, these models are built upon SQLAlchemy, which readily enables the use of a database backend to store all of this data and metadata. Much of the relationships between various entities (_e.g._ samples relating to a patient, effects relating to a mutation) are already handled by Cancer_API such that the user doesn't have to.
 
-The OncoPy framework and API is designed to be easy to use. To get started with a database, you simply connect, create your tables and you're ready to populate your database. Assuming a `parse_vcf` function that creates a dictionary of key-value pairs corresponding to the parameters of the `oncopy.SingleNucleotideVariant` class, the following code shows how SNVs could easily be stored in a MySQL database. And soon, a VCF file parser will no longer be necessary (see Future Plans below). 
+The Cancer_API framework and API is designed to be easy to use. To get started with a database, you simply connect, create your tables and you're ready to populate your database. Assuming a `parse_vcf` function that creates a dictionary of key-value pairs corresponding to the parameters of the `cancer_api.SingleNucleotideVariant` class, the following code shows how SNVs could easily be stored in a MySQL database. And soon, a VCF file parser will no longer be necessary (see Future Plans below). 
 
 ```python
-import oncopy
-oncopy.connect(MysqlConnection(
+import cancer_api
+cancer_api.connect(MysqlConnection(
     host="localhost", 
-    user="oncopyfan", 
-    password="oncopyrocks!", 
+    user="cancer_apifan", 
+    password="cancer_apirocks!", 
     database="cancer_project"))
 for line in vcf_file:
     row_dict = parse_vcf(line)
-    snv = oncopy.SingleNucleotideVariant(**row_dict)
+    snv = cancer_api.SingleNucleotideVariant(**row_dict)
     snv.save()
 ```
 
-Additionally, an assortment of scripts that make use of the OncoPy framework and API are provided as part of this repository in `bin`. These can perform a variety of tasks, such as populating the database with reference annotations (_e.g._ genes, transcripts, etc.).
+Additionally, an assortment of scripts that make use of the Cancer_API framework and API are provided as part of this repository in `bin`. These can perform a variety of tasks, such as populating the database with reference annotations (_e.g._ genes, transcripts, etc.).
 
 ## Installation
 
 ### Dependencies
 
-OncoPy's dependencies should be downloaded and installed automatically during the installation steps below. 
+Cancer_API's dependencies should be downloaded and installed automatically during the installation steps below. 
 
 * SQLAlchemy (tested with v0.9.8)
 
 ### Installation Steps
 
 ```bash
-git clone https://github.com/brunogrande/OncoPy.git
-cd OncoPy
+git clone https://github.com/brunogrande/Cancer_API.git
+cd Cancer_API
 python setup.py install
 ```
 
 ## Future Plans
 
-OncoPy will be expanded to include classes for handling common (and also uncommon) file types. These will utilize the models described above in order to allow easy conversion from one file format to another as well as ready-made file parsing for creating a list of OncoPy entities (_e.g._ genes, mutations, etc.) and optionally loading these into a database. 
+Cancer_API will be expanded to include classes for handling common (and also uncommon) file types. These will utilize the models described above in order to allow easy conversion from one file format to another as well as ready-made file parsing for creating a list of Cancer_API entities (_e.g._ genes, mutations, etc.) and optionally loading these into a database. 
