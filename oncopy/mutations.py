@@ -7,7 +7,6 @@ from base import Base
 
 class Mutation(Base):
     """Base class for all mutations"""
-    __tablename__ = "mutation"
 
     id = Column(Integer, primary_key=True)
     library_id = Column(Integer, ForeignKey("library.id"))
@@ -23,7 +22,6 @@ class SingleNucleotideVariant(Mutation):
     """Model for single nucleotide variants
     (i.e. involving one genomic position)
     """
-    __tablename__ = "snv"
 
     id = Column(Integer, ForeignKey("mutation.id"), primary_key=True)
     chrom = Column(String(length=50))
@@ -38,7 +36,6 @@ class SingleNucleotideVariant(Mutation):
 
 class StructuralVariation(Mutation):
     """Model for structural variations"""
-    __tablename__ = "sv"
 
     id = Column(Integer, ForeignKey("mutation.id"), primary_key=True)
     chrom1 = Column(String(length=50))
@@ -57,7 +54,6 @@ class CopyNumberVariation(Mutation):
     callers which provide a fold-change
     (e.g. like tools which use read depth)
     """
-    __tablename__ = "cnv"
 
     id = Column(Integer, ForeignKey("mutation.id"), primary_key=True)
     chrom = Column(String(length=50))

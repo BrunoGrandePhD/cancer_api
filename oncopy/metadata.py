@@ -7,7 +7,6 @@ from base import Base
 
 class Patient(Base):
     """Model for patients"""
-    __tablename__ = "patient"
 
     id = Column(Integer, primary_key=True)
     patient_name = Column(String(length=100))
@@ -15,7 +14,6 @@ class Patient(Base):
 
 class Sample(Base):
     """Model for samples"""
-    __tablename__ = "sample"
 
     id = Column(Integer, primary_key=True)
     sample_name = Column(String(length=100))
@@ -25,7 +23,6 @@ class Sample(Base):
 
 class Library(Base):
     """Model for libraries"""
-    __tablename__ = "library"
 
     id = Column(Integer, primary_key=True)
     library_name = Column(String(length=100))

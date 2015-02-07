@@ -17,7 +17,8 @@ class DatabaseConnection(object):
         try:
             self._session
         except AttributeError:
-            raise NotConnectedToDatabase("Database connection needed. See oncopy.connect().")
+            raise NotConnectedToDatabase("Database connection needed. "
+                                         "See `oncopy.connect` function")
         return self._session
 
     @session.setter
@@ -32,6 +33,10 @@ class DatabaseConnection(object):
     def close(self):
         """Close database connection"""
         self._session.close()
+
+    def commit(self):
+        """Commit the pending transaction"""
+        self.session.commit()
 
     def create_tables(self):
         """Creates all tables according to base"""

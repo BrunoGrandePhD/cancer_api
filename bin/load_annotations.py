@@ -26,7 +26,6 @@ import os
 import requests
 from collections import defaultdict
 import logging
-import sys
 
 BIOMART_API_URL = 'http://grch37.ensembl.org/biomart/martservice/'
 GENE_FIELDNAMES = [
@@ -50,20 +49,21 @@ def main():
     parser.add_argument('db_name', help='Name of target database')
     parser.add_argument('--cache_dir', '-o', default='',
                         help='Directory for caching/reloading data')
+    parser.add_argument('--fast_mode', '-f', action='store_true',
+                        help='Disables check for preexisting entries, which is useful for '
+                        'loading empty databases. Ensure that the input has no duplicates.')
     args = parser.parse_args()
 
     # Setup logging
-    log_format = '%(asctime)s - %(levelname)s (%(module)s): %(message)s'
-    date_format = '%Y/%m/%d %H:%M:%S'  # 2010/12/12 13:46:36
-    logging.basicConfig(format=log_format, level=logging.INFO, datefmt=date_format,
-                        stream=sys.stderr)
+    oncopy.utils.setup_logging()
     logging.info('Initializing script...')
 
     # Establish connection with cancer_db instance
     logging.info('Connecting to cancer database...')
-    db_cnx = oncopy.MysqlConnection(args.db_host, args.db_user, args.db_password, args.db_name)
+    db_cnx = oncopy.connect(oncopy.MysqlConnection(args.db_host, args.db_user,
+                            args.db_password, args.db_name))
+    db_session = db_cnx.session
     db_cnx.create_tables()
-    db_session = db_cnx.start_session()
 
     # Create output directory if doesn't exist
     if not os.path.exists(args.cache_dir):
@@ -107,11 +107,13 @@ def main():
             'end_pos': row_dict['end_position'],
             'length': int(row_dict['end_position']) - int(row_dict['start_position']) + 1
         }
-        # gene = oncopy.Gene(**gene_dict)
-        # db_session.add(gene)
-        oncopy.Gene.get_or_create(db_session, **gene_dict)
+        if args.fast_mode:
+            gene = oncopy.Gene(**gene_dict)
+            gene.add()
+        else:
+            oncopy.Gene.get_or_create(**gene_dict)
         gene_counter += 1
-    db_session.commit()
+    db_cnx.commit()
     logging.info('Finished loading {} genes into the database.'.format(gene_counter))
 
     # For transcript and exon tables
@@ -234,8 +236,11 @@ def main():
         transcript_dict["gene_id"] = gene_id
 
         # Add transcript to database
-        transcript = oncopy.Transcript.get_or_create(db_session, **transcript_dict)
-        db_session.add(transcript)
+        if args.fast_mode:
+            transcript = oncopy.Transcript(**transcript_dict)
+            transcript.add()
+        else:
+            transcript = oncopy.Transcript.get_or_create(**transcript_dict)
         transcript_counter += 1
 
         for exon in exons:
@@ -246,14 +251,17 @@ def main():
     # Iterate over all_exons and add them to database using transcript ID
     # Now that the transcripts have IDs
     exon_counter = 0
-    for exon in all_exons:
-        exon.pop("cdna_coding_start")
-        exon.pop("cdna_coding_end")
-        transcript = exon.pop("transcript")
-        exon["transcript_id"] = transcript.id
-        exon["gene_id"] = transcript.gene_id
-        exon = oncopy.Exon.get_or_create(db_session, **exon)
-        db_session.add(exon)
+    for exon_dict in all_exons:
+        exon_dict.pop("cdna_coding_start")
+        exon_dict.pop("cdna_coding_end")
+        transcript = exon_dict.pop("transcript")
+        exon_dict["transcript_id"] = transcript.id
+        exon_dict["gene_id"] = transcript.gene_id
+        if args.fast_mode:
+            exon = oncopy.Exon(**exon_dict)
+            exon.add()
+        else:
+            exon = oncopy.Exon.get_or_create(**exon_dict)
         exon_counter += 1
     db_session.commit()
     logging.info('Finished loading {} transcripts into the database.'.format(transcript_counter))
@@ -295,7 +303,11 @@ def main():
             'transcript_id': transcript_id,
             'gene_id': gene_id
         }
-        oncopy.Protein.get_or_create(db_session, **protein_dict)
+        if args.fast_mode:
+            protein = oncopy.Protein(**protein_dict)
+            protein.add()
+        else:
+            protein = oncopy.Protein.get_or_create(**protein_dict)
         protein_counter += 1
     db_session.commit()
     logging.info('Finished loading {} proteins into the database.'.format(protein_counter))
@@ -304,7 +316,7 @@ def main():
     logging.warning('Did not load data into the protein_region table. Not implemented yet.')
 
     # Clean up
-    db_cnx.close_session()
+    db_cnx.close()
     logging.info('Finished loading Ensembl reference data into database.')
 
 
