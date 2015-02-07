@@ -34,8 +34,8 @@ Cancer_API's dependencies should be downloaded and installed automatically durin
 ### Installation Steps
 
 ```bash
-git clone https://github.com/brunogrande/Cancer_API.git
-cd Cancer_API
+git clone https://github.com/brunogrande/cancer_api.git
+cd cancer_api
 python setup.py install
 ```
 
