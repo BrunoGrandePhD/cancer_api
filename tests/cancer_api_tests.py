@@ -7,7 +7,7 @@ class test_database_connection(object):
     @classmethod
     def setup_class(cls):
         cnx = cancer_api.connect(cancer_api.SqliteConnection())
-        cancer_api.connection.create_tables()
+        cnx.create_tables()
 
     @classmethod
     def teardown_class(cls):
