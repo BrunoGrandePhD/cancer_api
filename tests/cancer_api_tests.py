@@ -11,7 +11,8 @@ class test_database_connection(object):
 
     @classmethod
     def teardown_class(cls):
-        cancer_api.connection.close()
+        cnx = cancer_api.get_connection()
+        cnx.close()
 
     def test_table_creation(self):
         pass
