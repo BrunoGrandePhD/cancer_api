@@ -7,7 +7,7 @@ setup(
     name='cancer_api',
     version=cancer_api.__version__,
     description='A Python framework and API for handling and storing cancer genomics data and metadata.',
-    url='https://github.com/brunogrande/Cancer_API',
+    url='https://github.com/brunogrande/cancer_api',
     author='Bruno Grande',
     author_email='bgrande@sfu.ca',
     license='MIT',
