@@ -21,32 +21,10 @@ class DeclarativeMetaMixin(DeclarativeMeta):
         # Second, ensure that attributes listed in unique_on aren't nullable either
         if "unique_on" in dict_:
             unique_on = dict_["unique_on"]
-            for attribute in unique_on:
-                dict_[attribute].nullable = False
+            for attr in unique_on:
+                dict_[attr].nullable = False
         # Then proceed as usual
         super(DeclarativeMetaMixin, cls).__init__(classname, bases, dict_)
-
-
-# class MyDeclarativeMeta(type):
-#     def __init__(cls, classname, bases, dict_):
-#         # Intercept class creation and ensure that the unique_on
-#         # attributes are nullable=False and unique=True
-#         if "unique_on" in dict_:
-#             unique_on = dict_["unique_on"]
-#             for attribute in unique_on:
-#                 dict_[attribute].nullable = False
-#                 # dict_[attribute].unique = True
-#         # Also ensure that primary keys are not nullable
-#         for name, value in dict_.items():
-#             if type(value) == Column and value.foreign_keys:
-#                 dict_[name].nullable = False
-#         # Proceed with the rest
-#         if '_decl_class_registry' not in cls.__dict__:
-#             _as_declarative(cls, classname, cls.__dict__)
-#         type.__init__(cls, classname, bases, dict_)
-
-#     def __setattr__(cls, key, value):
-#         _add_attribute(cls, key, value)
 
 
 class BaseMixin(object):
@@ -60,9 +38,9 @@ class BaseMixin(object):
     def __table_args__(cls):
         addons = []
         if type(cls.unique_on) == list:
-            attributes = "_&_".join(cls.unique_on)
-            addons.append(UniqueConstraint(*cls.unique_on, name="unique_on_" + attributes))
-            addons.append(Index("index_for_" + attributes, *cls.unique_on))
+            attrs = "_&_".join(cls.unique_on)
+            addons.append(UniqueConstraint(*cls.unique_on, name="unique_on_" + attrs))
+            addons.append(Index("index_for_" + attrs, *cls.unique_on))
         return tuple(addons)
 
     @property
@@ -117,4 +95,3 @@ class BaseMixin(object):
 
 
 Base = declarative_base(cls=BaseMixin, metaclass=DeclarativeMetaMixin)
-# Base = declarative_base(cls=BaseMixin)
