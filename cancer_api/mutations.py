@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from sqlalchemy import Column, Integer, String, Float, Enum, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Float, Enum, ForeignKey
 from sqlalchemy.orm import relationship
 from base import Base
 
@@ -19,19 +19,31 @@ class Mutation(Base):
 
 
 class SingleNucleotideVariant(Mutation):
-    """Model for single nucleotide variants
-    (i.e. involving one genomic position)
-    """
+    """Model for single nucleotide variants"""
 
     id = Column(Integer, ForeignKey("mutation.id"), primary_key=True)
     chrom = Column(String(length=50))
     pos = Column(Integer)
-    ref_allele = Column(String(length=1))
-    alt_allele = Column(String(length=1))
+    ref_allele = Column(Enum("A", "T", "G", "C"))
+    alt_allele = Column(Enum("A", "T", "G", "C"))
     ref_count = Column(Integer)
     alt_count = Column(Integer)
 
     mutation = relationship("Mutation", backref="snv")
+
+
+class Indel(Mutation):
+    """Model for indels"""
+
+    id = Column(Integer, ForeignKey("mutation.id"), primary_key=True)
+    chrom = Column(String(length=50))
+    pos = Column(Integer)
+    ref_allele = Column(Text)
+    alt_allele = Column(Text)
+    ref_count = Column(Integer)
+    alt_count = Column(Integer)
+
+    mutation = relationship("Mutation", backref="indel")
 
 
 class StructuralVariation(Mutation):
@@ -50,10 +62,7 @@ class StructuralVariation(Mutation):
 
 
 class CopyNumberVariation(Mutation):
-    """Model for copy number variations as called by
-    callers which provide a fold-change
-    (e.g. like tools which use read depth)
-    """
+    """Model for copy number variations"""
 
     id = Column(Integer, ForeignKey("mutation.id"), primary_key=True)
     chrom = Column(String(length=50))

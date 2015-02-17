@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from mutations import SingleNucleotideVariant, StructuralVariant
+from mutations import SingleNucleotideVariant, Indel, StructuralVariation
 
 
 class BaseParser(object):
@@ -10,14 +10,13 @@ class BaseParser(object):
         """Store related file internally."""
         self.file = file
 
-    def _parse(self, line):
-        """The _parse method is internally used by the
-        parser classes for generating a dictionary of
-        attribute-value pairs. This is useful for
-        inheriting parent _parse and updating the
-        returned dictionary accordingly.
+    def basic_parse(self, line):
+        """The basic_parse method serves to create
+        a dictionary of (column name, value) pairs.
+        This is to provide a common base for all
+        derivative parsers.
 
-        Returns a dict of attribute-value pairs
+        Returns a dict of (column name, value) pairs.
         """
         raise NotImplementedError
 
@@ -36,27 +35,40 @@ class VcfParser(BaseParser):
 
     BASE_COLUMNS = ["chrom", "pos", "id", "ref", "alt", "qual", "filter", "info"]
 
-    def _parse(self, line):
-        """Parse line from VCF file.
+    def basic_parse(self, line):
+        """Parse
         Returns dict of attribute-value pairs.
         """
         attrs = {}
+        # Parse columns
         split_line = line.split("\t")
         if len(split_line) <= len(self.BASE_COLUMNS):
+            # If there are only the base columns or less
             attrs.update(dict(zip(self.BASE_COLUMNS, split_line)))
         else:
-            columns = self.BASE_COLUMNS + ["format"]
-            columns += ["sample_{}".format(sample_num) for sample_num
-                        in range(1, len(split_line) - len(columns) + 1)]
-            attrs.update(dict(zip(columns, split_line)))
+            # If there are more columns (format and sample columns)
+            extra_cols = self.file.col_names[len(self.BASE_COLUMNS):]
+            extra_cols[0] = "format"  # ensure lowercase for format
+            cols = self.BASE_COLUMNS + extra_cols
+            attrs.update(dict(zip(cols, split_line)))
+        # Parse info column
+        info_cols = attrs["info"].split(";")
+        info_dict = {}
+        for col in info_cols:
+            key, sep, value = col.partition("=")
+            if sep == "=":
+                info_dict[key] = value
+            else:
+                info_dict[key] = True
+        attrs["info_dict"] = info_dict
         return attrs
 
     def parse(self, line):
         """Parse line from VCF file.
-        Returns SingleNucleotideVariant instance.
+        Returns SingleNucleotideVariant or Indel instance.
         """
         attrs = self._parse(line)
-        snv_dict = {
+        mutation_dict = {
             "chrom": attrs["chrom"],
             "pos": attrs["pos"],
             "ref_allele": attrs["ref"],
@@ -64,33 +76,50 @@ class VcfParser(BaseParser):
             "ref_count": None,
             "alt_count": None
         }
-        snv = SingleNucleotideVariant(**snv_dict)
-        return snv
+        if (len(mutation_dict["ref_allele"]) == 1 and
+                len(mutation_dict["alt_allele"]) == 1):
+            mutation = SingleNucleotideVariant(**mutation_dict)
+        else:
+            mutation = Indel(**mutation_dict)
+        return mutation
 
 
 class DellyVcfParser(VcfParser):
     """Parser for DELLY VCF files."""
 
-    def _parse(self, line):
-        """Parse line from DELLY VCF file.
-        Returns dict of attribute-value pairs.
-        """
-        attrs = super(DellyVcfParser, self)._parse(line)
-        return attrs
+    SV_TYPE_MAP = {
+        "DEL": "deletion",
+        "DUP": "duplication",
+        "INV": "inversion",
+        "TRA": "translocation",
+        "INS": "insertion"
+    }
+
+    STRAND_MAP = {
+        "5": "+",
+        "3": "-"
+    }
 
     def parse(self, line):
         """Parse line from DELLY VCF file.
         Returns StructuralVariant instance.
         """
-        attrs = self._parse(line)
+        attrs = self.basic_parse(line)
+        info_dict = attrs["info_dict"]
+        # Calculate SV strands, which are encoded are 5' or 3'
+        strand1, strand2 = (self.STRAND_MAP[strand] for strand in
+                            info_dict["CT"].split("to"))
+        # Obtain SV type
+        sv_type = self.SV_TYPE_MAP[info_dict["SVTYPE"]]
+        # Construct SV object
         sv_dict = {
             "chrom1": attrs["chrom"],
             "pos1": attrs["pos"],
-            "strand1": None,
-            "chrom2": None,
-            "pos2": None,
-            "strand2": None,
-            "sv_type": None
+            "strand1": strand1,
+            "chrom2": info_dict["CHR2"],
+            "pos2": info_dict["END"],
+            "strand2": strand2,
+            "sv_type": sv_type
         }
-        sv = StructuralVariant(**sv_dict)
+        sv = StructuralVariation(**sv_dict)
         return sv
