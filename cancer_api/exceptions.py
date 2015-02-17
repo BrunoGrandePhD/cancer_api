@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 
 
-class Cancer_APIException(Exception):
+class CancerApiException(Exception):
     """Base class for Cancer_API exceptions"""
     pass
 
 
-class NotConnectedToDatabase(Cancer_APIException):
+class NotConnectedToDatabase(CancerApiException):
     """A database connection is needed for running
     this method.
     """
     pass
 
 
-class IllegalVariableDefinition(Cancer_APIException):
+class IllegalVariableDefinition(CancerApiException):
     """A variable was attempted to be defined in a non-canonical way."""
     pass
