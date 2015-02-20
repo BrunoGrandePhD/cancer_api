@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from mutations import SingleNucleotideVariant, Indel, StructuralVariation
+from utils import GenomicInterval
 
 
 class BaseParser(object):
@@ -36,12 +37,12 @@ class VcfParser(BaseParser):
     BASE_COLUMNS = ["chrom", "pos", "id", "ref", "alt", "qual", "filter", "info"]
 
     def basic_parse(self, line):
-        """Parse
+        """Parse VCF file.
         Returns dict of attribute-value pairs.
         """
         attrs = {}
         # Parse columns
-        split_line = line.split("\t")
+        split_line = line.rstrip("\n").split("\t")
         if len(split_line) <= len(self.BASE_COLUMNS):
             # If there are only the base columns or less
             attrs.update(dict(zip(self.BASE_COLUMNS, split_line)))
@@ -123,3 +124,25 @@ class DellyVcfParser(VcfParser):
         }
         sv = StructuralVariation(**sv_dict)
         return sv
+
+
+class BedParser(BaseParser):
+    """Basic parser for BED interval files"""
+
+    BASE_COLUMNS = ["chrom", "start_pos", "end_pos"]
+
+    def basic_parse(self, line):
+        """Parse basic columns for BED file.
+        Returns dictionary of attributes.
+        """
+        attrs = {}
+        split_line = line.rstrip("\n").split("\t")
+        attrs = dict(zip(self.BASE_COLUMNS, split_line))
+        return attrs
+
+    def parse(self, line):
+        """Parse BED file line.
+        Returns Interval instances.
+        """
+        attrs = self.basic_parse(line)
+        return GenomicInterval(**attrs)

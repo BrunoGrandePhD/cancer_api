@@ -2,6 +2,7 @@
 
 import parsers
 import mutations
+from exceptions import CancerApiException
 
 
 class BaseFile(object):
@@ -10,12 +11,19 @@ class BaseFile(object):
     DEFAULT_HEADER = ""
     HEADER_PREFIX = "#"
 
+    def __init__(self, *args, **kwargs):
+        """Provide more informative error message.
+        Redirect users to open and convert methods.
+        """
+        raise CancerApiException("Cannot instantiate file directly. "
+                                 "Please use `open` and `convert` methods instead.")
+
     @classmethod
     def open(cls, filepath, parser_cls=None):
         """Instantiate a BaseFile object from an
         existing file on disk.
         """
-        obj = cls()
+        obj = cls.__new__(cls)
         obj.filepath = filepath
         if not parser_cls:
             parser_cls = cls.DEFAULT_PARSER_CLS
@@ -28,7 +36,7 @@ class BaseFile(object):
         """Instantiate a BaseFile object from another
         BaseFile object.
         """
-        obj = cls()
+        obj = cls.__new__(cls)
         obj._source = other_file._source
         return obj
 
@@ -174,3 +182,9 @@ class BedpeFile(BaseFile):
         else:
             line = None
         return line
+
+
+class BedFile(BaseFile):
+    """Class for representing BED interval files."""
+
+    DEFAULT_PARSER_CLS = parsers.BedParser
