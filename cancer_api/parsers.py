@@ -1,7 +1,12 @@
-#!/usr/bin/env python
+"""
+parsers.py
+==========
+This submodule contains all parsers used by the file classes
+in the files submodule.
+"""
 
 from mutations import SingleNucleotideVariant, Indel, StructuralVariation
-from utils import GenomicInterval
+from misc import GenomicInterval, RawRead
 
 
 class BaseParser(object):
@@ -146,3 +151,31 @@ class BedParser(BaseParser):
         """
         attrs = self.basic_parse(line)
         return GenomicInterval(**attrs)
+
+
+class FastqParser(BaseParser):
+    """Basic parser for FASTQ raw read files.
+    Assumes quartets (i.e., string of four lines).
+    """
+
+    BASE_COLUMNS = ["id", "seq", "strand", "qual"]
+
+    def basic_parse(self, quartet):
+        """Parse basic quartet for FASTQ file.
+        Returns dictionary of basic attributes.
+        """
+        attrs = {}
+        split_quartet = quartet.rstrip("\n").split("\n")
+        attrs = dict(zip(self.BASE_COLUMNS, split_quartet))
+        return attrs
+
+    def parse(self, quartet):
+        """Parse quartet for FASTQ file.
+        Return RawRead instances.
+        """
+        attrs = self.basic_parse(quartet)
+        # Remove @ prefix in id
+        attrs["id"] = attrs["id"].lstrip("@")
+        # Only keep first character in strand
+        attrs["strand"] = attrs["id"][0]
+        return RawRead(**attrs)

@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+"""
+annotations.py
+==============
+This submodule contains all classes representing reference
+genome annotations, such as genes, transcripts and proteins.
+"""
 
 from sqlalchemy import Column, Integer, String, Enum, ForeignKey
 from sqlalchemy.orm import relationship

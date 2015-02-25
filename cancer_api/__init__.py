@@ -1,3 +1,9 @@
+"""
+__init__.py
+===========
+Where it all begins.
+"""
+
 __version__ = "0.1"
 
 from main import connect, get_connection, set_connection

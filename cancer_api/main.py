@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+"""
+main.py
+=======
+This submodule contains classes and functions that serve
+to maintain the database connection and session.
+"""
 
 from sqlalchemy.orm import sessionmaker
 from exceptions import IllegalVariableDefinition, NotConnectedToDatabase

@@ -1,4 +1,10 @@
-#!/usr/bin/env python
+"""
+utils.py
+========
+This submodule contains convenience classes and functions
+used in cancer_api internally, but also available for
+external usage.
+"""
 
 import sys
 import logging
@@ -40,18 +46,3 @@ class Chronometer(object):
         # Set template according to whether a label is specified
         template = "{delta} sec" if label is "" else "{label}: {delta} sec"
         logging.info(template.format(label=label, delta=round(delta, 6)))
-
-
-class GenomicInterval(object):
-    """
-    Simple convenience class for representing genomic intervals.
-    """
-
-    def __init__(self, chrom, start_pos, end_pos):
-        self.chrom = str(chrom)
-        self.start_pos = int(start_pos)
-        self.end_pos = int(end_pos)
-
-    @property
-    def length(self):
-        return self.end_pos - self.start_pos + 1

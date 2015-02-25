@@ -1,7 +1,14 @@
-#!/usr/bin/env python
+"""
+files.py
+========
+This submodules contains all classes representing file
+types/formats, which in turn employ the parsers submodule.
+"""
 
+import gzip
 import parsers
 import mutations
+import misc
 from exceptions import CancerApiException
 
 
@@ -49,7 +56,7 @@ class BaseFile(object):
         if getattr(self, "_header", None):
             header = self._header
         elif getattr(self, "filepath", None):
-            with open(self.filepath) as infile:
+            with self._open(self.filepath) as infile:
                 header = ""
                 for line in infile:
                     if self.is_header_line(line):
@@ -102,13 +109,33 @@ class BaseFile(object):
         Defaults to lines starting with '#'.
         """
         is_header_line = False
-        if line.startswith(cls.HEADER_PREFIX):
+        # If HEADER_PREFIX is None, always return false
+        if cls.HEADER_PREFIX is not None and line.startswith(cls.HEADER_PREFIX):
             is_header_line = True
         return is_header_line
 
-    def create_line(self, obj):
+    def _open(self, filepath, mode="r", *args, **kwargs):
+        """Wrapper for file open() function.
+        Purpose: to catch gzipped files and handle them
+        accordingly by using the gzip module.
+        """
+        opened_file = None
+        if filepath.endswith(".gz"):
+            # Ensure that "b" is in the mode
+            if "b" not in mode:
+                mode += "b"
+            # Override compression level default (9 -> 6)
+            # if not specified
+            if "compresslevel" not in kwargs:
+                kwargs["compresslevel"] = 6
+            opened_file = gzip.open(filepath, mode, *args, **kwargs)
+        else:
+            opened_file = open(filepath, mode, *args, **kwargs)
+        return opened_file
+
+    def obj_to_str(self, obj):
         """Returns string for representing objects
-        as lines in current file type.
+        as lines (one or many) in current file type.
         If object doesn't have a line representation for
         the current file type, return None.
         """
@@ -127,11 +154,11 @@ class BaseFile(object):
         If instance is a converted file, update
         filepath and parser attributes accordingly.
         """
-        with open(outfilepath, "w") as outfile:
+        with self._open(outfilepath, "w") as outfile:
             header = self.create_header()
             outfile.write(header)
             for obj in self.source:
-                line = self.create_line(obj)
+                line = self.obj_to_str(obj)
                 outfile.write(line)
         if self._source is not self:
             self._source = self
@@ -144,7 +171,7 @@ class BaseFile(object):
         """
         # Iterate over every non-header line
         source = self._source
-        with open(source.filepath) as infile:
+        with self._open(source.filepath) as infile:
             for line in infile:
                 if source.is_header_line(line):
                     continue
@@ -162,7 +189,7 @@ class VcfFile(BaseFile):
 class BedpeFile(BaseFile):
     """Class for representing BEDPE files."""
 
-    def create_line(self, obj):
+    def obj_to_str(self, obj):
         """Create line from SV objects."""
         if type(obj) is mutations.StructuralVariation:
             template = ("{chrom1}\t{start1}\t{end1}\t{chrom2}\t{start2}\t{end2}\t"
@@ -188,3 +215,51 @@ class BedFile(BaseFile):
     """Class for representing BED interval files."""
 
     DEFAULT_PARSER_CLS = parsers.BedParser
+
+
+class FastqFile(BaseFile):
+    """Class for representing FASTQ raw read files.
+    Assumes modern Illumina FASTQ files.
+    """
+
+    DEFAULT_PARSER_CLS = parsers.FastqParser
+    HEADER_PREFIX = None
+
+    def __iter__(self):
+        """Override __iter__ such that it iterates over
+        quartets (groups of four lines).
+        """
+        # Iterate over quartets (non-header lines)
+        source = self._source
+        with self._open(source.filepath) as infile:
+            current_quartet = ""
+            for line in infile:
+                # Skip header lines
+                if source.is_header_line(line):
+                    continue
+                # Add line to quartet
+                current_quartet += line
+                # Check if quartet has four lines
+                # And continue to next line otherwise
+                if len(current_quartet.rstrip("\n").split("\n")) < 4:
+                    continue
+                # Once the quartet has four lines, it will continue on
+                # to being parsed
+                obj = source.parser.parse(line)
+                if obj:
+                    yield obj
+                current_quartet = ""
+
+    def obj_to_str(self, obj):
+        """Create quartet from RawRead instance."""
+        if type(obj) is misc.RawRead:
+            template = ("{id}\n{seq}\n{strand}\n{qual}\n")
+            line = template.format(
+                id=("@" + obj.id),
+                seq=obj.seq,
+                strand=obj.strand,
+                qual=obj.qual
+            )
+        else:
+            line = None
+        return line

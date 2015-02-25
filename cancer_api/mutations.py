@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+"""
+mutations.py
+============
+This submodule contains all classes representing mutations
+in cancer, notably SNVs, indels, CNVs and SVs.
+"""
 
 from sqlalchemy import Column, Integer, String, Text, Float, Enum, ForeignKey
 from sqlalchemy.orm import relationship

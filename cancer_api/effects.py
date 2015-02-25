@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+"""
+effects.py
+==========
+This submodule contains classes representing effects that
+mutations may have, such as amino acid changes in proteins.
+"""
 
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship

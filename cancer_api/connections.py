@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+"""
+connections.py
+==============
+This submodule contains classes representing database
+connections, used in the main submodule.
+"""
 
 from sqlalchemy import create_engine
 from base import Base

@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+"""
+base.py
+=======
+This submodule defines the SQLAlchemy Declarative Base
+and tweaks it for use in cancer_api.
+"""
 
 from sqlalchemy import UniqueConstraint, Index, Column
 from sqlalchemy.ext.declarative import declarative_base, declared_attr

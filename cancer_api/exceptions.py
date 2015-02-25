@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+"""
+exceptions.py
+=============
+This submodule contains custom exceptions to achieve more
+informative error messages when something goes wrong.
+"""
 
 
 class CancerApiException(Exception):

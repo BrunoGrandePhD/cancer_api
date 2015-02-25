@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+"""
+metadata.py
+===========
+This submodule contains all classes representing metadata
+entities, such as patients, samples and derived DNA libraries.
+"""
 
 from sqlalchemy import Column, Integer, String, Enum, ForeignKey
 from sqlalchemy.orm import relationship
