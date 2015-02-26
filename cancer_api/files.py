@@ -245,7 +245,7 @@ class FastqFile(BaseFile):
                     continue
                 # Once the quartet has four lines, it will continue on
                 # to being parsed
-                obj = source.parser.parse(line)
+                obj = source.parser.parse(current_quartet)
                 if obj:
                     yield obj
                 current_quartet = ""
