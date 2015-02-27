@@ -6,10 +6,11 @@ types/formats, which in turn employ the parsers submodule.
 """
 
 import gzip
+import os.path
 import parsers
 import mutations
 import misc
-from exceptions import CancerApiException
+from exceptions import CancerApiException, IllegalVariableDefinition
 
 
 class BaseFile(object):
@@ -17,6 +18,7 @@ class BaseFile(object):
 
     DEFAULT_HEADER = ""
     HEADER_PREFIX = "#"
+    FILE_EXTENSIONS = []
 
     def __init__(self, *args, **kwargs):
         """Provide more informative error message.
@@ -45,6 +47,17 @@ class BaseFile(object):
         """
         obj = cls.__new__(cls)
         obj._source = other_file._source
+        return obj
+
+    @classmethod
+    def new(cls, filepath=None):
+        """Instantiate a BaseFile object from scratch.
+        Useful for adding objects and write them out to disk.
+        """
+        obj = cls.__new__(cls)
+        obj.filepath = filepath
+        obj._storelist = []
+        obj._source = obj
         return obj
 
     @property
@@ -87,6 +100,22 @@ class BaseFile(object):
         self._col_names = list(value)
 
     @property
+    def filename(self):
+        if self._source == self:
+            full_filename = os.path.basename(self.filepath)
+            for ext in self.FILE_EXTENSIONS:
+                if full_filename.lower().endswith("." + ext.lower()):
+                    ext_len = len("." + ext)
+                    return full_filename[:-ext_len]
+            return full_filename
+        else:
+            return None
+
+    @filename.setter
+    def filename(self, value):
+        raise IllegalVariableDefinition("Cannot directly edit filename.")
+
+    @property
     def filepath(self):
         return self._source._filepath
 
@@ -101,6 +130,36 @@ class BaseFile(object):
     @parser.setter
     def parser(self, value):
         self._parser = value
+
+    @property
+    def storelist(self):
+        if not getattr(self, "_storelist", None):
+            self._storelist = []
+        return self._storelist
+
+    @storelist.setter
+    def storelist(self, value):
+        raise IllegalVariableDefinition("Modify storelist using methods such as "
+                                        "`add_obj`, `rm_obj`, `clear_storelist`")
+
+    def add_obj(self, obj):
+        """Add object to storelist. Useful to bind objects
+        to files created with the `new` constructor.
+        Ensure that no duplicates are added.
+        Returns whether the object was added, that is True if
+        the object wasn't in self.storelist.
+        """
+        is_stored = obj in self.storelist
+        if not is_stored:
+            self._storelist.append(obj)
+        return not is_stored
+
+    def rm_obj(self, obj):
+        raise NotImplementedError("`BaseFile.rm_obj` is not implemented yet.")
+
+    def clear_storelist(self):
+        """Empty storelist"""
+        self._storelist = []
 
     @classmethod
     def is_header_line(cls, line):
@@ -133,7 +192,8 @@ class BaseFile(object):
             opened_file = open(filepath, mode, *args, **kwargs)
         return opened_file
 
-    def obj_to_str(self, obj):
+    @classmethod
+    def obj_to_str(cls, obj):
         """Returns string for representing objects
         as lines (one or many) in current file type.
         If object doesn't have a line representation for
@@ -149,21 +209,47 @@ class BaseFile(object):
         # return line
         raise NotImplementedError
 
-    def write(self, outfilepath):
+    def write(self, outfilepath=None):
         """Write BaseFile instance out to disk.
+        If not outfilepath specified, appends objects
+        stored in self.storelist to current filepath.
+        Will iterate over source's file and any objects
+        stored in self.storelist.
         If instance is a converted file, update
         filepath and parser attributes accordingly.
         """
-        with self._open(outfilepath, "w") as outfile:
-            header = self.create_header()
-            outfile.write(header)
-            for obj in self.source:
-                line = self.obj_to_str(obj)
-                outfile.write(line)
-        if self._source is not self:
-            self._source = self
-            self.filepath = outfilepath
-            self.parser = self.DEFAULT_PARSER_CLS
+        # If outfilepath is specified, write every object in
+        # self.source and self.storelist to disk.
+        # Clear self.storelist afterwards.
+        if outfilepath:
+            with self._open(outfilepath, "w") as outfile:
+                header = self.create_header()
+                outfile.write(header)
+                for obj in self.source:
+                    line = self.obj_to_str(obj)
+                    outfile.write(line)
+                for obj in self.source.storelist:
+                    line = self.obj_to_str(obj)
+                    outfile.write(line)
+            if self._source is not self:
+                self._source = self
+                self.filepath = outfilepath
+                self.parser = self.DEFAULT_PARSER_CLS
+            self.clear_storelist()
+        # If outfilepath is not specified, it is assumed that the
+        # file instance already has self.filepath and the purpose
+        # is to append any objects stored in self.storelist to the
+        # file on disk.
+        # Clear self.storelist afterwards.
+        else:
+            if self._source is not self or not self.filepath:
+                raise CancerApiException("This file has never been written out to disk. "
+                                         "Please specify an outfilepath at first.")
+            with self._open(self.filepath, "a+") as outfile:
+                for obj in self.storelist:
+                    line = self.obj_to_str(obj)
+                    outfile.write(line)
+            self.clear_storelist()
 
     def __iter__(self):
         """Return instances of the objects
@@ -184,12 +270,14 @@ class VcfFile(BaseFile):
     """Class for representing VCF files."""
 
     DEFAULT_PARSER_CLS = parsers.VcfParser
+    FILE_EXTENSIONS = ["vcf"]
 
 
 class BedpeFile(BaseFile):
     """Class for representing BEDPE files."""
 
-    def obj_to_str(self, obj):
+    @classmethod
+    def obj_to_str(cls, obj):
         """Create line from SV objects."""
         if type(obj) is mutations.StructuralVariation:
             template = ("{chrom1}\t{start1}\t{end1}\t{chrom2}\t{start2}\t{end2}\t"
@@ -224,6 +312,7 @@ class FastqFile(BaseFile):
 
     DEFAULT_PARSER_CLS = parsers.FastqParser
     HEADER_PREFIX = None
+    FILE_EXTENSIONS = ["fastq", "fq", "fastq.gz", "fq.gz"]
 
     def __iter__(self):
         """Override __iter__ such that it iterates over
@@ -250,16 +339,17 @@ class FastqFile(BaseFile):
                     yield obj
                 current_quartet = ""
 
-    def obj_to_str(self, obj):
+    @classmethod
+    def obj_to_str(cls, obj):
         """Create quartet from RawRead instance."""
         if type(obj) is misc.RawRead:
             template = ("{id}\n{seq}\n{strand}\n{qual}\n")
-            line = template.format(
+            quartet = template.format(
                 id=("@" + obj.id),
                 seq=obj.seq,
                 strand=obj.strand,
                 qual=obj.qual
             )
         else:
-            line = None
-        return line
+            quartet = None
+        return quartet

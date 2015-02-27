@@ -177,5 +177,5 @@ class FastqParser(BaseParser):
         # Remove @ prefix in id
         attrs["id"] = attrs["id"].lstrip("@")
         # Only keep first character in strand
-        attrs["strand"] = attrs["id"][0]
+        attrs["strand"] = attrs["strand"][0]
         return RawRead(**attrs)

@@ -6,9 +6,13 @@ elsewhere for the moment. Eventually, another submodule
 might be added and classes herein moved there.
 """
 
+from base import CancerApiObject
 
-class GenomicInterval(object):
+
+class GenomicInterval(CancerApiObject):
     """Simple class for representing genomic intervals."""
+
+    unique_on = ["chrom", "start_pos", "end_pos"]
 
     def __init__(self, chrom, start_pos, end_pos):
         self.chrom = str(chrom)
@@ -20,8 +24,10 @@ class GenomicInterval(object):
         return self.end_pos - self.start_pos + 1
 
 
-class RawRead(object):
+class RawRead(CancerApiObject):
     """Simple class for representing raw sequence reads"""
+
+    unique_on = ["id", "seq", "strand", "qual"]
 
     def __init__(self, id, seq, strand, qual):
         self.id = id

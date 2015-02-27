@@ -32,21 +32,11 @@ class DeclarativeMetaMixin(DeclarativeMeta):
         super(DeclarativeMetaMixin, cls).__init__(classname, bases, dict_)
 
 
-class BaseMixin(object):
-    """Provides methods to Base"""
-
-    @declared_attr
-    def __tablename__(cls):
-        return cls.__name__.lower()
-
-    @declared_attr
-    def __table_args__(cls):
-        addons = []
-        if type(cls.unique_on) == list:
-            attrs = "_&_".join(cls.unique_on)
-            addons.append(UniqueConstraint(*cls.unique_on, name="unique_on_" + attrs))
-            addons.append(Index("index_for_" + attrs, *cls.unique_on))
-        return tuple(addons)
+class CancerApiObject(object):
+    """
+    Base object to allow for common class methods
+    that apply for table and non-table models.
+    """
 
     @property
     def unique_on(self):
@@ -62,6 +52,32 @@ class BaseMixin(object):
             self._unique_on = [value]
         else:
             self._unique_on = value
+
+    def __eq__(self, other):
+        # If not the same type, return false right away
+        if type(other) is not type(self):
+            return False
+        # Then compare based on unique_on attributes
+        unique_on = self.unique_on
+        is_equal = [getattr(self, attr) == getattr(other, attr) for attr in unique_on]
+        return all(is_equal)
+
+
+class BaseMixin(CancerApiObject):
+    """Provides methods to Base"""
+
+    @declared_attr
+    def __tablename__(cls):
+        return cls.__name__.lower()
+
+    @declared_attr
+    def __table_args__(cls):
+        addons = []
+        if type(cls.unique_on) == list:
+            attrs = "_&_".join(cls.unique_on)
+            addons.append(UniqueConstraint(*cls.unique_on, name="unique_on_" + attrs))
+            addons.append(Index("index_for_" + attrs, *cls.unique_on))
+        return tuple(addons)
 
     @classmethod
     def get_or_create(cls, **kwargs):
