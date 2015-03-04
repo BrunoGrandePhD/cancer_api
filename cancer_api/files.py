@@ -7,6 +7,7 @@ types/formats, which in turn employ the parsers submodule.
 
 import gzip
 import os.path
+import gc
 import parsers
 import mutations
 import misc
@@ -235,6 +236,8 @@ class BaseFile(object):
                 self.filepath = outfilepath
                 self.parser = self.DEFAULT_PARSER_CLS
             self.clear_storelist()
+            # Force garbage collection
+            gc.collect()
         # If outfilepath is not specified, it is assumed that the
         # file instance already has self.filepath and the purpose
         # is to append any objects stored in self.storelist to the
