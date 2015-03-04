@@ -145,11 +145,10 @@ class BaseFile(object):
     def add_obj(self, obj):
         """Add object to storelist. Useful to bind objects
         to files created with the `new` constructor.
-        Ensure that no duplicates are added.
-        Returns whether the object was added, that is True if
-        the object wasn't in self.storelist.
+        Returns whether the object was added
+        (always True for now).
         """
-        is_stored = obj in self.storelist
+        is_stored = False
         if not is_stored:
             self._storelist.append(obj)
         return not is_stored
