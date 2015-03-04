@@ -1,6 +1,18 @@
 Release History
 ===============
 
+Next
+----
+
+**Features and Enhancements**
+
+- Moved garbage collection (for reduced memory usage) to `clear_storelist` method
+
+**Bugfixes**
+
+- 
+
+
 0.1.3
 -----
 
