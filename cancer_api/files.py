@@ -160,6 +160,8 @@ class BaseFile(object):
     def clear_storelist(self):
         """Empty storelist"""
         self._storelist = []
+        # Force garbage collection
+        gc.collect()
 
     @classmethod
     def is_header_line(cls, line):
@@ -236,8 +238,6 @@ class BaseFile(object):
                 self.filepath = outfilepath
                 self.parser = self.DEFAULT_PARSER_CLS
             self.clear_storelist()
-            # Force garbage collection
-            gc.collect()
         # If outfilepath is not specified, it is assumed that the
         # file instance already has self.filepath and the purpose
         # is to append any objects stored in self.storelist to the
