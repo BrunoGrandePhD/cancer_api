@@ -1,8 +1,8 @@
 Release History
 ===============
 
-Next
-----
+0.1.4
+-----
 
 **Features and Enhancements**
 
@@ -10,7 +10,7 @@ Next
 
 **Bugfixes**
 
-- 
+- The files submodule would incorrectly append to the same file between different runs. This has been fixed.
 
 
 0.1.3
