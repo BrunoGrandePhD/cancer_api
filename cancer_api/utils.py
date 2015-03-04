@@ -31,18 +31,21 @@ class Chronometer(object):
     def __init__(self):
         """Set start time"""
         self.start_time = time.time()
+        self.last_time = self.start_time
         zero_time = time.time() - time.time()
         self.laps = [("start time", zero_time)]
 
     def reset(self):
         """Reset start time"""
         self.start_time = time.time()
+        self.last_time = self.start_time
 
     def lap(self, label=""):
         """Record and print time"""
         current_time = time.time()
-        delta = current_time - self.start_time
+        delta = current_time - self.last_time
         self.laps.append((label, delta))
         # Set template according to whether a label is specified
-        template = "{delta} sec" if label is "" else "{label}: {delta} sec"
-        logging.info(template.format(label=label, delta=round(delta, 6)))
+        template = "{delta} sec" if label is "" else "{label}: {delta:.8f} sec"
+        logging.info(template.format(label=label, delta=delta))
+        self.last_time = current_time
