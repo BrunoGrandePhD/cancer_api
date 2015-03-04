@@ -1,6 +1,12 @@
 Release History
 ===============
 
+0.1.3
+-----
+
+Version bumped for uploading to Pypi.
+
+
 0.1.2
 -----
 
