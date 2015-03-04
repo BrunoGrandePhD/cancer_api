@@ -59,6 +59,7 @@ class BaseFile(object):
         obj.filepath = filepath
         obj._storelist = []
         obj._source = obj
+        obj.is_new_file = True
         return obj
 
     @property
@@ -236,6 +237,7 @@ class BaseFile(object):
             if self._source is not self:
                 self._source = self
                 self.filepath = outfilepath
+                self.has_written
                 self.parser = self.DEFAULT_PARSER_CLS
             self.clear_storelist()
         # If outfilepath is not specified, it is assumed that the
@@ -247,6 +249,11 @@ class BaseFile(object):
             if self._source is not self or not self.filepath:
                 raise CancerApiException("This file has never been written out to disk. "
                                          "Please specify an outfilepath at first.")
+            # Check if this is a new file and if self.filepath exists
+            if self.is_new_file and os.path.exists(self.filepath):
+                raise CancerApiException("The specified filepath already exists. If you wish "
+                                         "to overwrite the file, delete it or explicitly "
+                                         "specify an outfilepath for the `write` method.")
             with self._open(self.filepath, "a+") as outfile:
                 for obj in self.storelist:
                     line = self.obj_to_str(obj)
