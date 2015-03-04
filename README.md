@@ -39,6 +39,10 @@ cd cancer_api
 python setup.py install
 ```
 
+## Release History
+
+See [release history](HISTORY.md).
+
 ## Future Plans
 
 Cancer_API will be expanded to include classes for handling common (and also uncommon) file types. These will utilize the models described above in order to allow easy conversion from one file format to another as well as ready-made file parsing for creating a list of Cancer_API entities (_e.g._ genes, mutations, etc.) and optionally loading these into a database. 
