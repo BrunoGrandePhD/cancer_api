@@ -1,8 +1,8 @@
 Release History
 ===============
 
-0.1.4
------
+0.1.4 (2015-03-04)
+------------------
 
 **Features and Enhancements**
 
@@ -13,14 +13,14 @@ Release History
 - The files submodule would incorrectly append to the same file between different runs. This has been fixed.
 
 
-0.1.3
------
+0.1.3 (2015-03-03)
+------------------
 
-Version bumped for uploading to Pypi.
+First version to be uploaded to PyPI (version bumped for naming reasons). 
 
 
-0.1.2
------
+0.1.2 (2015-03-03)
+------------------
 
 **Features and Improvements**
 
@@ -28,8 +28,8 @@ Version bumped for uploading to Pypi.
 - Remove check for duplicates when adding objects to file storelist (for performance)
 
 
-0.1.1
------
+0.1.1 (2015-03-03)
+------------------
 
 **Features and Improvements**
 
@@ -40,9 +40,7 @@ Version bumped for uploading to Pypi.
 - `Chronometer.lap` method now prints difference in time since last lap instead of accumulated time.
 
 
-0.1.0
------
+0.1.0 (2015-01-22)
+------------------
 
-**Features and Improvements**
-
-- First initial version after adding a few class to the files submodule (_e.g._ FastqFile).
+Initial version. 
