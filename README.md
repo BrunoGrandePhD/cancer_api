@@ -29,6 +29,7 @@ Additionally, an assortment of scripts that make use of the cancer_api framework
 
 cancer_api's dependencies should be downloaded and installed automatically during the installation steps below. 
 
+* `python>=2.7`
 * `SQLAlchemy>=0.9.8`
 
 ### Installation Steps
