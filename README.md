@@ -3,7 +3,11 @@
 [![Latest Version](https://img.shields.io/pypi/v/cancer-api.svg)](https://pypi.python.org/pypi/cancer-api/)
 [![Build Status](https://travis-ci.org/brunogrande/cancer_api.svg?branch=master)](https://travis-ci.org/brunogrande/cancer_api)
 
-cancer_api is a Python package that serves to provide a framework and API for handling and storing cancer genomics data and metadata. Essentially, this package consists of a set of Python classes that serve to model entities encountered in cancer genomics research. This includes patients, samples, various mutation types and the effects of these mutations, just to name a few. 
+cancer_api is a Python package that serves to provide a framework and API for handling and storing cancer genomics data and metadata. This consists of an ambitious project to consolidate common tasks in cancer genomics into one easy-to-use package. This is a work in progress. The API will most likely change as I add and remove features to maximize usefulness and elegance of design. Accordingly, you may want to wait until v1.0. 
+
+## Description
+
+Essentially, this package consists of a set of Python classes that serve to model entities encountered in cancer genomics research. This includes patients, samples, various mutation types and the effects of these mutations, just to name a few. 
 
 Moreover, these models are built upon SQLAlchemy, which readily enables the use of a database backend to store all of this data and metadata. Much of the relationships between various entities (_e.g._ samples relating to a patient, effects relating to a mutation) are already handled by cancer_api such that the user doesn't have to.
 
