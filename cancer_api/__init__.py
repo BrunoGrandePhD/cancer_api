@@ -4,7 +4,7 @@ __init__.py
 Where it all begins.
 """
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 
 from main import connect, get_connection, set_connection
 from connections import MysqlConnection, SqliteConnection
