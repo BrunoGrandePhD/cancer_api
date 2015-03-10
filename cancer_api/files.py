@@ -39,6 +39,7 @@ class BaseFile(object):
             parser_cls = cls.DEFAULT_PARSER_CLS
         obj.parser = parser_cls(obj)
         obj._source = obj
+        obj.is_new_file = False
         return obj
 
     @classmethod
@@ -48,6 +49,7 @@ class BaseFile(object):
         """
         obj = cls.__new__(cls)
         obj._source = other_file._source
+        obj.is_new_file = True
         return obj
 
     @classmethod
@@ -57,7 +59,6 @@ class BaseFile(object):
         """
         obj = cls.__new__(cls)
         obj.filepath = filepath
-        obj._storelist = []
         obj._source = obj
         obj.is_new_file = True
         return obj
@@ -150,10 +151,10 @@ class BaseFile(object):
         Returns whether the object was added
         (always True for now).
         """
-        is_stored = False
-        if not is_stored:
-            self._storelist.append(obj)
-        return not is_stored
+        # Ensure that storelist is defined
+        self.storelist
+        self._storelist.append(obj)
+        return True
 
     def rm_obj(self, obj):
         raise NotImplementedError("`BaseFile.rm_obj` is not implemented yet.")
