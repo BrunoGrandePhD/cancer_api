@@ -72,17 +72,14 @@ class BaseFile(object):
         If not, return default header for current file type.
         """
         if getattr(self, "_header", None):
-            print 1
             header = self._header
         elif getattr(self, "_filepath", None):
-            print 2
             with self._open(self.filepath) as infile:
                 header = ""
                 for line in infile:
                     if self.is_header_line(line):
                         header += line
         else:
-            print 3
             header = self.DEFAULT_HEADER
         return header
 
