@@ -131,7 +131,7 @@ class DellyVcfParser(VcfParser):
         return sv
 
 
-class PavfinderParser(VcfParser):
+class PavfinderVcfParser(VcfParser):
     """Parser for PavFinder VCF files."""
 
     SV_TYPE_MAP = {
