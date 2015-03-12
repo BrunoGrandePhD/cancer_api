@@ -47,6 +47,8 @@ class BaseFile(object):
         """Instantiate a BaseFile object from another
         BaseFile object.
         """
+        if not isinstance(other_file, BaseFile):
+            raise CancerApiException("Must pass cancer_api file object.")
         obj = cls.__new__(cls)
         obj._source = other_file._source
         obj.is_new_file = True
@@ -71,7 +73,7 @@ class BaseFile(object):
         """
         if getattr(self, "_header", None):
             header = self._header
-        elif getattr(self, "filepath", None):
+        elif getattr(self, "_filepath", None):
             with self._open(self.filepath) as infile:
                 header = ""
                 for line in infile:
@@ -117,6 +119,16 @@ class BaseFile(object):
     @filename.setter
     def filename(self, value):
         raise IllegalVariableDefinition("Cannot directly edit filename.")
+
+    @classmethod
+    def get_extension(cls):
+        """Return first extension from cls.FILE_EXTENSIONS.
+        Otherwise, returns an error if not available.
+        """
+        if not getattr(cls, "FILE_EXTENSIONS", None):
+            raise CancerApiException("{} doesn't have file extensions specified "
+                                     "yet.".format(cls.__name__))
+        return cls.FILE_EXTENSIONS[0]
 
     @property
     def filepath(self):
@@ -227,18 +239,17 @@ class BaseFile(object):
         # Clear self.storelist afterwards.
         if outfilepath:
             with self._open(outfilepath, "w") as outfile:
-                header = self.create_header()
-                outfile.write(header)
-                for obj in self.source:
+                outfile.write(self.header)
+                for obj in self._source:
                     line = self.obj_to_str(obj)
                     outfile.write(line)
-                for obj in self.source.storelist:
+                for obj in self._source.storelist:
                     line = self.obj_to_str(obj)
                     outfile.write(line)
             if self._source is not self:
                 self._source = self
                 self.filepath = outfilepath
-                self.has_written
+                self.is_new_file = False
                 self.parser = self.DEFAULT_PARSER_CLS
             self.clear_storelist()
         # If outfilepath is not specified, it is assumed that the
@@ -286,6 +297,10 @@ class VcfFile(BaseFile):
 class BedpeFile(BaseFile):
     """Class for representing BEDPE files."""
 
+    FILE_EXTENSIONS = ["bedpe"]
+    DEFAULT_HEADER = "chrom1\tstart1\tend1\tchrom2\tstart2\tend2\tname\tscore\tstrand1\tstrand2\n"
+    DEFAULT_PARSER_CLS = parsers.BaseParser  # A BEDPE parser need to be implemented
+
     @classmethod
     def obj_to_str(cls, obj):
         """Create line from SV objects."""
@@ -295,10 +310,10 @@ class BedpeFile(BaseFile):
             line = template.format(
                 chrom1=obj.chrom1,
                 start1=obj.pos1,
-                end1=obj.pos1,
+                end1=int(obj.pos1) + 1,
                 chrom2=obj.chrom2,
                 start2=obj.pos2,
-                end2=obj.pos2,
+                end2=int(obj.pos2) + 1,
                 name="{}_{}_{}_{}".format(obj.chrom1, obj.pos1, obj.chrom2, obj.pos2),
                 score="",
                 strand1=obj.strand1,
@@ -313,6 +328,7 @@ class BedFile(BaseFile):
     """Class for representing BED interval files."""
 
     DEFAULT_PARSER_CLS = parsers.BedParser
+    FILE_EXTENSIONS = ["bed"]
 
 
 class FastqFile(BaseFile):
@@ -370,3 +386,4 @@ class FacteraFile(BaseFile):
 
     DEFAULT_PARSER_CLS = parsers.FacteraParser
     HEADER_PREFIX = "Est_Type"
+    FILE_EXTENSIONS = ["fusions.txt"]
