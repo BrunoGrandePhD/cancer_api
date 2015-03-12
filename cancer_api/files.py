@@ -310,10 +310,10 @@ class BedpeFile(BaseFile):
             line = template.format(
                 chrom1=obj.chrom1,
                 start1=obj.pos1,
-                end1=obj.pos1 + 1,
+                end1=int(obj.pos1) + 1,
                 chrom2=obj.chrom2,
                 start2=obj.pos2,
-                end2=obj.pos2 + 1,
+                end2=int(obj.pos2) + 1,
                 name="{}_{}_{}_{}".format(obj.chrom1, obj.pos1, obj.chrom2, obj.pos2),
                 score="",
                 strand1=obj.strand1,
