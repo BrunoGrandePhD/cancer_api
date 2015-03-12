@@ -363,3 +363,10 @@ class FastqFile(BaseFile):
         else:
             quartet = None
         return quartet
+
+
+class FacteraFile(BaseFile):
+    """Class for representing Factera's 'fusions.txt' files"""
+
+    DEFAULT_PARSER_CLS = parsers.FacteraParser
+    HEADER_PREFIX = "Est_Type"

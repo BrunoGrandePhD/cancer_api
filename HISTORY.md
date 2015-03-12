@@ -1,12 +1,27 @@
 Release History
 ===============
 
+
+Next version
+------------------
+
+**Features and Enhancements**
+
+- Added Factera file type and parser
+- Added PavFinder file type and parser
+
+**Bugfixes**
+
+- None
+
+
 0.1.5 (2015-03-09)
 ------------------
 
 **Bugfixes**
 
 - Fixed uninitialized attributes in BaseFile
+
 
 0.1.4 (2015-03-04)
 ------------------

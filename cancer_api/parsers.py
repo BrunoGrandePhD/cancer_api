@@ -73,7 +73,7 @@ class VcfParser(BaseParser):
         """Parse line from VCF file.
         Returns SingleNucleotideVariant or Indel instance.
         """
-        attrs = self._parse(line)
+        attrs = self.basic_parse(line)
         mutation_dict = {
             "chrom": attrs["chrom"],
             "pos": attrs["pos"],
@@ -108,7 +108,7 @@ class DellyVcfParser(VcfParser):
 
     def parse(self, line):
         """Parse line from DELLY VCF file.
-        Returns StructuralVariant instance.
+        Returns StructuralVariation instance.
         """
         attrs = self.basic_parse(line)
         info_dict = attrs["info_dict"]
@@ -125,6 +125,41 @@ class DellyVcfParser(VcfParser):
             "chrom2": info_dict["CHR2"],
             "pos2": info_dict["END"],
             "strand2": strand2,
+            "sv_type": sv_type
+        }
+        sv = StructuralVariation(**sv_dict)
+        return sv
+
+
+class PavfinderParser(VcfParser):
+    """Parser for PavFinder VCF files."""
+
+    SV_TYPE_MAP = {
+        "DEL": "deletion",
+        "DUP": "duplication",
+        "INV": "inversion",
+        "INS": "insertion"
+    }
+
+    def parse(self, line):
+        """Parse line from PavFinder VCF file.
+        Returns StructuralVariation instance.
+        """
+        attrs = self.basic_parse(line)
+        info_dict = attrs["info_dict"]
+        # Obtain SV type
+        if "SVTYPE" in info_dict and info_dict["SVTYPE"] in self.SV_TYPE_MAP:
+            sv_type = self.SV_TYPE_MAP[info_dict["SVTYPE"]]
+        else:
+            return None
+        # Construct SV object
+        sv_dict = {
+            "chrom1": attrs["chrom"],
+            "pos1": attrs["pos"],
+            "strand1": None,
+            "chrom2": attrs["chrom"],
+            "pos2": info_dict["END"],
+            "strand2": None,
             "sv_type": sv_type
         }
         sv = StructuralVariation(**sv_dict)
@@ -179,3 +214,56 @@ class FastqParser(BaseParser):
         # Only keep first character in strand
         attrs["strand"] = attrs["strand"][0]
         return RawRead(**attrs)
+
+
+class FacteraParser(BaseParser):
+    """Parser for Factera 'fusions.txt' files"""
+
+    BASE_COLUMNS = ["est_type", "region1", "region2", "break1", "break2", "break_support1",
+                    "break_support2", "break_offset", "orientation", "order1", "order2",
+                    "break_depth", "proper_pair_support", "unmapped_support",
+                    "improper_pair_support", "paired_end_depth", "total_depth", "fusion_seq",
+                    "non-templated_seq"]
+
+    SV_TYPE_MAP = {
+        "DEL": "deletion",
+        "INV": "inversion",
+        "TRA": "translocation",
+    }
+
+    def basic_parse(self, line):
+        """Parse basic columns for Factera files.
+        Returns dictionary of attributes.
+        """
+        attrs = {}
+        split_line = line.rstrip("\n").split("\t")
+        attrs = dict(zip(self.BASE_COLUMNS, split_line))
+        return attrs
+
+    def parse(self, line):
+        """Parse Factera file line.
+        Returns StructuralVariation instances.
+        """
+        attrs = self.basic_parse(line)
+        # Parse chrom and pos
+        chrom1, pos1 = attrs["break1"].split(":")
+        chrom2, pos2 = attrs["break2"].split(":")
+        # Obtain strand info
+        strand1 = attrs["orientation"][1]
+        strand2 = attrs["orientation"][4]
+        # Parse SV type
+        if attrs["est_type"] in self.SV_TYPE_MAP:
+            sv_type = self.SV_TYPE_MAP[attrs["est_type"]]
+        else:
+            return None
+        # Create sv_dict
+        sv_dict = {
+            "chrom1": chrom1,
+            "pos1": pos1,
+            "strand1": strand1,
+            "chrom2": chrom2,
+            "pos2": pos2,
+            "strand2": strand2,
+            "sv_type": sv_type
+        }
+        return StructuralVariation(**sv_dict)
