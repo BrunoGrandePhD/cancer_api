@@ -10,7 +10,7 @@ import gc
 import parsers
 import mutations
 import misc
-from exceptions import CancerApiException, IllegalVariableDefinition
+from exceptions import CancerApiException
 from utils import open_file
 
 
@@ -86,7 +86,7 @@ class BaseFile(object):
         if getattr(self, "_header", None):
             header = self._header
         elif getattr(self, "_filepath", None):
-            with self.open_file(self.filepath) as infile:
+            with open_file(self.filepath) as infile:
                 header = ""
                 for line in infile:
                     if self.is_header_line(line):
@@ -202,7 +202,7 @@ class BaseFile(object):
         # (which might come from something else) and every object in
         # self.storelist and write them out to disk
         if outfilepath:
-            with self.open_file(outfilepath, mode) as outfile:
+            with open_file(outfilepath, mode) as outfile:
                 outfile.write(self.header)
                 for obj in self:
                     line = self.obj_to_str(obj)
@@ -223,7 +223,7 @@ class BaseFile(object):
             # If the file is new and the path already exist, do not append
             if self.is_new and os.path.exists(self.filepath):
                 raise CancerApiException("Output file already exists: {}".format(self.filepath))
-            with self.open_file(self.filepath, "a+") as outfile:
+            with open_file(self.filepath, "a+") as outfile:
                 # If the file is new, start with header
                 if self.is_new:
                     outfile.write(self.header)
@@ -242,7 +242,7 @@ class BaseFile(object):
         associated with the current file type.
         """
         # Iterate over every non-header line in self.source
-        with self.open_file(self.source.filepath) as infile:
+        with open_file(self.source.filepath) as infile:
             for line in infile:
                 if self.source.is_header_line(line):
                     continue
@@ -310,7 +310,7 @@ class FastqFile(BaseFile):
         """
         # Iterate over quartets (non-header lines)
         source = self._source
-        with self.open_file(source.filepath) as infile:
+        with open_file(source.filepath) as infile:
             current_quartet = ""
             for line in infile:
                 # Skip header lines
