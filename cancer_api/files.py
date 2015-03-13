@@ -5,13 +5,13 @@ This submodules contains all classes representing file
 types/formats, which in turn employ the parsers submodule.
 """
 
-import gzip
 import os.path
 import gc
 import parsers
 import mutations
 import misc
 from exceptions import CancerApiException, IllegalVariableDefinition
+from utils import open_file
 
 
 class BaseFile(object):
@@ -22,11 +22,23 @@ class BaseFile(object):
     FILE_EXTENSIONS = []
 
     def __init__(self, *args, **kwargs):
-        """Provide more informative error message.
-        Redirect users to open and convert methods.
+        """Can't initialize directly."""
+        raise CancerApiException("Please use `open`, `convert` or `new` methods instead.")
+
+    @classmethod
+    def _init(cls, filepath=None, parser_cls=None, other_file=None, is_new=None):
+        """Initialize BaseFile. Any instantiation of BaseFile should
+        go through this method in an attempt to standardize attributes.
+        Meant to be used internally only.
         """
-        raise CancerApiException("Cannot instantiate file directly. "
-                                 "Please use `open` and `convert` methods instead.")
+        obj = cls.__new__(cls)
+        obj.filepath = filepath
+        obj.parser_cls = parser_cls
+        obj.parser = parser_cls() if parser_cls else cls.DEFAULT_PARSER_CLS
+        obj.source = obj if not other_file else other_file.source
+        obj.is_new = is_new
+        obj.storelist = []
+        return obj
 
     @classmethod
     def open(cls, filepath, parser_cls=None):
@@ -43,7 +55,7 @@ class BaseFile(object):
         return obj
 
     @classmethod
-    def convert(cls, other_file):
+    def convert(cls, filepath, other_file):
         """Instantiate a BaseFile object from another
         BaseFile object.
         """
@@ -55,7 +67,7 @@ class BaseFile(object):
         return obj
 
     @classmethod
-    def new(cls, filepath=None):
+    def new(cls, filepath):
         """Instantiate a BaseFile object from scratch.
         Useful for adding objects and write them out to disk.
         """
@@ -74,7 +86,7 @@ class BaseFile(object):
         if getattr(self, "_header", None):
             header = self._header
         elif getattr(self, "_filepath", None):
-            with self._open(self.filepath) as infile:
+            with self.open_file(self.filepath) as infile:
                 header = ""
                 for line in infile:
                     if self.is_header_line(line):
@@ -104,24 +116,26 @@ class BaseFile(object):
     def col_names(self, value):
         self._col_names = list(value)
 
-    @property
-    def filename(self):
-        if self._source == self:
-            full_filename = os.path.basename(self.filepath)
-            for ext in self.FILE_EXTENSIONS:
-                if full_filename.lower().endswith("." + ext.lower()):
-                    ext_len = len("." + ext)
-                    return full_filename[:-ext_len]
-            return full_filename
-        else:
-            return None
+    def split_filename(self):
+        """Obtain root and extension (ext) from filename,
+        where the filename is root.ext
+        """
+        filename = os.path.basename(self.filepath)
+        for ext in self.FILE_EXTENSIONS:
+            pass
 
-    @filename.setter
-    def filename(self, value):
-        raise IllegalVariableDefinition("Cannot directly edit filename.")
+        # if self._source == self:
+        #     full_filename = os.path.basename(self.filepath)
+        #     for ext in self.FILE_EXTENSIONS:
+        #         if full_filename.lower().endswith("." + ext.lower()):
+        #             ext_len = len("." + ext)
+        #             return full_filename[:-ext_len]
+        #     return full_filename
+        # else:
+        #     return None
 
     @classmethod
-    def get_extension(cls):
+    def get_cls_extension(cls):
         """Return first extension from cls.FILE_EXTENSIONS.
         Otherwise, returns an error if not available.
         """
@@ -129,33 +143,6 @@ class BaseFile(object):
             raise CancerApiException("{} doesn't have file extensions specified "
                                      "yet.".format(cls.__name__))
         return cls.FILE_EXTENSIONS[0]
-
-    @property
-    def filepath(self):
-        return self._source._filepath
-
-    @filepath.setter
-    def filepath(self, value):
-        self._filepath = value
-
-    @property
-    def parser(self):
-        return self._source._parser
-
-    @parser.setter
-    def parser(self, value):
-        self._parser = value
-
-    @property
-    def storelist(self):
-        if not getattr(self, "_storelist", None):
-            self._storelist = []
-        return self._storelist
-
-    @storelist.setter
-    def storelist(self, value):
-        raise IllegalVariableDefinition("Modify storelist using methods such as "
-                                        "`add_obj`, `rm_obj`, `clear_storelist`")
 
     def add_obj(self, obj):
         """Add object to storelist. Useful to bind objects
@@ -189,25 +176,6 @@ class BaseFile(object):
             is_header_line = True
         return is_header_line
 
-    def _open(self, filepath, mode="r", *args, **kwargs):
-        """Wrapper for file open() function.
-        Purpose: to catch gzipped files and handle them
-        accordingly by using the gzip module.
-        """
-        opened_file = None
-        if filepath.endswith(".gz"):
-            # Ensure that "b" is in the mode
-            if "b" not in mode:
-                mode += "b"
-            # Override compression level default (9 -> 6)
-            # if not specified
-            if "compresslevel" not in kwargs:
-                kwargs["compresslevel"] = 6
-            opened_file = gzip.open(filepath, mode, *args, **kwargs)
-        else:
-            opened_file = open(filepath, mode, *args, **kwargs)
-        return opened_file
-
     @classmethod
     def obj_to_str(cls, obj):
         """Returns string for representing objects
@@ -225,64 +193,60 @@ class BaseFile(object):
         # return line
         raise NotImplementedError
 
-    def write(self, outfilepath=None):
-        """Write BaseFile instance out to disk.
-        If not outfilepath specified, appends objects
-        stored in self.storelist to current filepath.
-        Will iterate over source's file and any objects
-        stored in self.storelist.
-        If instance is a converted file, update
-        filepath and parser attributes accordingly.
+    def write(self, outfilepath=None, mode="w"):
+        """Write objects in file to disk.
+        Either you can write to a new file (if outfilepath is given),
+        or you can append what's in storelist to the current filepath.
         """
-        # If outfilepath is specified, write every object in
-        # self.source and self.storelist to disk.
-        # Clear self.storelist afterwards.
+        # If outfilepath is specified, iterate over every object in self
+        # (which might come from something else) and every object in
+        # self.storelist and write them out to disk
         if outfilepath:
-            with self._open(outfilepath, "w") as outfile:
+            with self.open_file(outfilepath, mode) as outfile:
                 outfile.write(self.header)
-                for obj in self._source:
+                for obj in self:
                     line = self.obj_to_str(obj)
                     outfile.write(line)
-                for obj in self._source.storelist:
-                    line = self.obj_to_str(obj)
-                    outfile.write(line)
-            if self._source is not self:
-                self._source = self
-                self.filepath = outfilepath
-                self.is_new_file = False
-                self.parser = self.DEFAULT_PARSER_CLS
-            self.clear_storelist()
-        # If outfilepath is not specified, it is assumed that the
-        # file instance already has self.filepath and the purpose
-        # is to append any objects stored in self.storelist to the
-        # file on disk.
-        # Clear self.storelist afterwards.
-        else:
-            if self._source is not self or not self.filepath:
-                raise CancerApiException("This file has never been written out to disk. "
-                                         "Please specify an outfilepath at first.")
-            # Check if this is a new file and if self.filepath exists
-            if self.is_new_file and os.path.exists(self.filepath):
-                raise CancerApiException("The specified filepath already exists. If you wish "
-                                         "to overwrite the file, delete it or explicitly "
-                                         "specify an outfilepath for the `write` method.")
-            with self._open(self.filepath, "a+") as outfile:
                 for obj in self.storelist:
                     line = self.obj_to_str(obj)
                     outfile.write(line)
+            # Clear storelist now that they've been written to disk
             self.clear_storelist()
+            # Update file attributes (in case of new or converted file)
+            self.source = self
+            self.filepath = outfilepath
+            self.is_new = False
+
+        # If outfilepath is not specified, simply iterate over every
+        # object in self.storelist and append them to the file on disk.
+        else:
+            # If the file is new and the path already exist, do not append
+            if self.is_new and os.path.exists(self.filepath):
+                raise CancerApiException("Output file already exists: {}".format(self.filepath))
+            with self.open_file(self.filepath, "a+") as outfile:
+                # If the file is new, start with header
+                if self.is_new:
+                    outfile.write(self.header)
+                # Proceed with iterating over storelist
+                for obj in self.storelist:
+                    line = self.obj_to_str(obj)
+                    outfile.write(line)
+            # Clear storelist now that they've been written to disk
+            self.clear_storelist()
+            # Update file attributes (in case of new or converted file)
+            self.source = self
+            self.is_new = False
 
     def __iter__(self):
         """Return instances of the objects
         associated with the current file type.
         """
-        # Iterate over every non-header line
-        source = self._source
-        with self._open(source.filepath) as infile:
+        # Iterate over every non-header line in self.source
+        with self.open_file(self.source.filepath) as infile:
             for line in infile:
-                if source.is_header_line(line):
+                if self.source.is_header_line(line):
                     continue
-                obj = source.parser.parse(line)
+                obj = self.source.parser.parse(line)
                 if obj:
                     yield obj
 
@@ -346,7 +310,7 @@ class FastqFile(BaseFile):
         """
         # Iterate over quartets (non-header lines)
         source = self._source
-        with self._open(source.filepath) as infile:
+        with self.open_file(source.filepath) as infile:
             current_quartet = ""
             for line in infile:
                 # Skip header lines
