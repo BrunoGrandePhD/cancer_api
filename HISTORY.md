@@ -9,10 +9,11 @@ Next version
 
 - Added Factera file type and parser
 - Added PavFinder file type and parser
+- Refactored BaseFile to be more consistent and stable
 
 **Bugfixes**
 
-- None
+- Fixed bugs relating to file conversion
 
 
 0.1.5 (2015-03-09)
