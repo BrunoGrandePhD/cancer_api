@@ -19,7 +19,7 @@ class BaseFile(object):
 
     DEFAULT_HEADER = ""
     HEADER_PREFIX = "#"
-    FILE_EXTENSIONS = []
+    FILE_EXTENSIONS = ["txt"]
 
     def __init__(self, *args, **kwargs):
         """Can't initialize directly."""
@@ -34,7 +34,7 @@ class BaseFile(object):
         obj = cls.__new__(cls)
         obj.filepath = filepath
         obj.parser_cls = parser_cls
-        obj.parser = parser_cls() if parser_cls else cls.DEFAULT_PARSER_CLS
+        obj.parser = parser_cls(obj) if parser_cls else cls.DEFAULT_PARSER_CLS(obj)
         obj.source = obj if not other_file else other_file.source
         obj.is_new = is_new
         obj.storelist = []
@@ -117,31 +117,20 @@ class BaseFile(object):
         self._col_names = list(value)
 
     def split_filename(self):
-        """Obtain root and extension (ext) from filename,
-        where the filename is root.ext
-        """
+        """Returns filename (root, ext) tuple."""
         filename = os.path.basename(self.filepath)
-        for ext in self.FILE_EXTENSIONS:
-            pass
-
-        # if self._source == self:
-        #     full_filename = os.path.basename(self.filepath)
-        #     for ext in self.FILE_EXTENSIONS:
-        #         if full_filename.lower().endswith("." + ext.lower()):
-        #             ext_len = len("." + ext)
-        #             return full_filename[:-ext_len]
-        #     return full_filename
-        # else:
-        #     return None
+        # Make sure that long extensions go first (to match the longest available extension)
+        for ext in ("." + x.lower() for x in sorted(self.FILE_EXTENSIONS, len, reverse=True)):
+            if filename.lower().endswith(ext):
+                return (filename[:-len(ext)], ext)
+        # If none of the class' file extensions match, just use os.path.splitext
+        return os.path.splitext(filename)
 
     @classmethod
     def get_cls_extension(cls):
         """Return first extension from cls.FILE_EXTENSIONS.
         Otherwise, returns an error if not available.
         """
-        if not getattr(cls, "FILE_EXTENSIONS", None):
-            raise CancerApiException("{} doesn't have file extensions specified "
-                                     "yet.".format(cls.__name__))
         return cls.FILE_EXTENSIONS[0]
 
     def add_obj(self, obj):
@@ -168,11 +157,11 @@ class BaseFile(object):
     def is_header_line(cls, line):
         """Return whether or not a line is a header line
         according to the current file type.
-        Defaults to lines starting with '#'.
+        Defaults to lines starting with '#'
+        (see BaseFile.HEADER_PREFIX).
         """
         is_header_line = False
-        # If HEADER_PREFIX is None, always return false
-        if cls.HEADER_PREFIX is not None and line.startswith(cls.HEADER_PREFIX):
+        if line.startswith(cls.HEADER_PREFIX):
             is_header_line = True
         return is_header_line
 
