@@ -26,7 +26,7 @@ class BaseFile(object):
         raise CancerApiException("Please use `open`, `convert` or `new` methods instead.")
 
     @classmethod
-    def _init(cls, filepath=None, parser_cls=None, other_file=None, is_new=None):
+    def _init(cls, filepath=None, parser_cls=None, other_file=None, is_new=False):
         """Initialize BaseFile. Any instantiation of BaseFile should
         go through this method in an attempt to standardize attributes.
         Meant to be used internally only.
@@ -45,13 +45,7 @@ class BaseFile(object):
         """Instantiate a BaseFile object from an
         existing file on disk.
         """
-        obj = cls.__new__(cls)
-        obj.filepath = filepath
-        if not parser_cls:
-            parser_cls = cls.DEFAULT_PARSER_CLS
-        obj.parser = parser_cls(obj)
-        obj._source = obj
-        obj.is_new_file = False
+        obj = cls._init(filepath=filepath, parser_cls=parser_cls, other_file=None, is_new=False)
         return obj
 
     @classmethod
@@ -60,10 +54,8 @@ class BaseFile(object):
         BaseFile object.
         """
         if not isinstance(other_file, BaseFile):
-            raise CancerApiException("Must pass cancer_api file object.")
-        obj = cls.__new__(cls)
-        obj._source = other_file._source
-        obj.is_new_file = True
+            raise CancerApiException("Must pass cancer_api file object as `other_file`.")
+        obj = cls._init(filepath=filepath, parser_cls=None, other_file=other_file, is_new=True)
         return obj
 
     @classmethod
@@ -71,40 +63,34 @@ class BaseFile(object):
         """Instantiate a BaseFile object from scratch.
         Useful for adding objects and write them out to disk.
         """
-        obj = cls.__new__(cls)
-        obj.filepath = filepath
-        obj._source = obj
-        obj.is_new_file = True
+        obj = cls._init(filepath=filepath, parser_cls=None, other_file=None, is_new=True)
         return obj
 
-    @property
-    def header(self):
+    def get_header(self):
         """Return header if already stored in instance.
         Otherwise, parse file on disk if filepath is specified.
         If not, return default header for current file type.
         """
-        if getattr(self, "_header", None):
-            header = self._header
-        elif getattr(self, "_filepath", None):
-            with open_file(self.filepath) as infile:
+        if self.is_new and self.source is self:
+            # It's a file create with the `new` method
+            header = self.DEFAULT_HEADER
+        elif (self.is_new and self.source is not self) or not self.is_new:
+            # It's a file created with the `convert` or `open` methods
+            with self._open() as infile:
                 header = ""
                 for line in infile:
                     if self.is_header_line(line):
                         header += line
-        else:
-            header = self.DEFAULT_HEADER
+                    else:
+                        break
         return header
-
-    @header.setter
-    def header(self, value):
-        self._header = value
 
     @property
     def col_names(self):
         if getattr(self, "_col_names", None):
             col_names = self._col_names
         else:
-            header = self.header
+            header = self.get_header()
             # Assume that the column names are the
             # last line in the header
             last_header_line = header.rstrip("\n").split("\n")[-1]
@@ -139,9 +125,7 @@ class BaseFile(object):
         Returns whether the object was added
         (always True for now).
         """
-        # Ensure that storelist is defined
-        self.storelist
-        self._storelist.append(obj)
+        self.storelist.append(obj)
         return True
 
     def rm_obj(self, obj):
@@ -149,7 +133,7 @@ class BaseFile(object):
 
     def clear_storelist(self):
         """Empty storelist"""
-        self._storelist = []
+        self.storelist = []
         # Force garbage collection
         gc.collect()
 
@@ -182,6 +166,10 @@ class BaseFile(object):
         # return line
         raise NotImplementedError
 
+    def _open(self):
+        """Use the open_file function on self.source.filepath in 'r' mode"""
+        return open_file(self.source.filepath)
+
     def write(self, outfilepath=None, mode="w"):
         """Write objects in file to disk.
         Either you can write to a new file (if outfilepath is given),
@@ -192,7 +180,7 @@ class BaseFile(object):
         # self.storelist and write them out to disk
         if outfilepath:
             with open_file(outfilepath, mode) as outfile:
-                outfile.write(self.header)
+                outfile.write(self.get_header())
                 for obj in self:
                     line = self.obj_to_str(obj)
                     outfile.write(line)
@@ -215,7 +203,7 @@ class BaseFile(object):
             with open_file(self.filepath, "a+") as outfile:
                 # If the file is new, start with header
                 if self.is_new:
-                    outfile.write(self.header)
+                    outfile.write(self.get_header())
                 # Proceed with iterating over storelist
                 for obj in self.storelist:
                     line = self.obj_to_str(obj)
@@ -231,7 +219,7 @@ class BaseFile(object):
         associated with the current file type.
         """
         # Iterate over every non-header line in self.source
-        with open_file(self.source.filepath) as infile:
+        with self._open() as infile:
             for line in infile:
                 if self.source.is_header_line(line):
                     continue
@@ -251,7 +239,7 @@ class BedpeFile(BaseFile):
     """Class for representing BEDPE files."""
 
     FILE_EXTENSIONS = ["bedpe"]
-    DEFAULT_HEADER = "chrom1\tstart1\tend1\tchrom2\tstart2\tend2\tname\tscore\tstrand1\tstrand2\n"
+    DEFAULT_HEADER = "#chrom1\tstart1\tend1\tchrom2\tstart2\tend2\tname\tscore\tstrand1\tstrand2\n"
     DEFAULT_PARSER_CLS = parsers.BaseParser  # A BEDPE parser need to be implemented
 
     @classmethod
@@ -299,7 +287,7 @@ class FastqFile(BaseFile):
         """
         # Iterate over quartets (non-header lines)
         source = self._source
-        with open_file(source.filepath) as infile:
+        with self._open() as infile:
             current_quartet = ""
             for line in infile:
                 # Skip header lines

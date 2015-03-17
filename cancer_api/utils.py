@@ -24,7 +24,7 @@ def setup_logging():
                         stream=sys.stderr)
 
 
-def open_file(self, filepath, mode="r", *args, **kwargs):
+def open_file(filepath, mode="r", *args, **kwargs):
     """Wrapper for file open() function.
     Purpose: to catch gzipped files and handle them
     accordingly by using the gzip module.
