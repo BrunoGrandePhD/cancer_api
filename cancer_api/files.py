@@ -10,6 +10,7 @@ import gc
 import parsers
 import mutations
 import misc
+from base import CancerApiObject
 from exceptions import CancerApiException
 from utils import open_file
 
@@ -125,11 +126,10 @@ class BaseFile(object):
         Returns whether the object was added
         (always True for now).
         """
+        if not isinstance(obj, CancerApiObject):
+            raise CancerApiException("`add_obj` only supports cancer_api objects")
         self.storelist.append(obj)
         return True
-
-    def rm_obj(self, obj):
-        raise NotImplementedError("`BaseFile.rm_obj` is not implemented yet.")
 
     def clear_storelist(self):
         """Empty storelist"""
@@ -207,6 +207,7 @@ class BaseFile(object):
                 # Proceed with iterating over storelist
                 for obj in self.storelist:
                     line = self.obj_to_str(obj)
+                    print "line: ", line
                     outfile.write(line)
             # Clear storelist now that they've been written to disk
             self.clear_storelist()
