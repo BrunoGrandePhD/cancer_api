@@ -7,6 +7,7 @@ types/formats, which in turn employ the parsers submodule.
 
 import os.path
 import gc
+import logging
 import parsers
 import mutations
 import misc
@@ -27,7 +28,7 @@ class BaseFile(object):
         raise CancerApiException("Please use `open`, `convert` or `new` methods instead.")
 
     @classmethod
-    def _init(cls, filepath=None, parser_cls=None, other_file=None, is_new=False):
+    def _init(cls, filepath=None, parser_cls=None, other_file=None, is_new=False, buffersize=None):
         """Initialize BaseFile. Any instantiation of BaseFile should
         go through this method in an attempt to standardize attributes.
         Meant to be used internally only.
@@ -39,32 +40,36 @@ class BaseFile(object):
         obj.source = obj if not other_file else other_file.source
         obj.is_new = is_new
         obj.storelist = []
+        obj.buffersize = buffersize
         return obj
 
     @classmethod
-    def open(cls, filepath, parser_cls=None):
+    def open(cls, filepath, parser_cls=None, buffersize=None):
         """Instantiate a BaseFile object from an
         existing file on disk.
         """
-        obj = cls._init(filepath=filepath, parser_cls=parser_cls, other_file=None, is_new=False)
+        obj = cls._init(filepath=filepath, parser_cls=parser_cls, other_file=None, is_new=False,
+                        buffersize=buffersize)
         return obj
 
     @classmethod
-    def convert(cls, filepath, other_file):
+    def convert(cls, filepath, other_file, buffersize=None):
         """Instantiate a BaseFile object from another
         BaseFile object.
         """
         if not isinstance(other_file, BaseFile):
             raise CancerApiException("Must pass cancer_api file object as `other_file`.")
-        obj = cls._init(filepath=filepath, parser_cls=None, other_file=other_file, is_new=True)
+        obj = cls._init(filepath=filepath, parser_cls=None, other_file=other_file, is_new=True,
+                        buffersize=buffersize)
         return obj
 
     @classmethod
-    def new(cls, filepath):
+    def new(cls, filepath, buffersize=None):
         """Instantiate a BaseFile object from scratch.
         Useful for adding objects and write them out to disk.
         """
-        obj = cls._init(filepath=filepath, parser_cls=None, other_file=None, is_new=True)
+        obj = cls._init(filepath=filepath, parser_cls=None, other_file=None, is_new=True,
+                        buffersize=buffersize)
         return obj
 
     def get_header(self):
@@ -129,6 +134,8 @@ class BaseFile(object):
         if not isinstance(obj, CancerApiObject):
             raise CancerApiException("`add_obj` only supports cancer_api objects")
         self.storelist.append(obj)
+        if self.buffersize and len(self.storelist) >= self.buffersize:
+            self.write()
         return True
 
     def clear_storelist(self):
@@ -180,6 +187,7 @@ class BaseFile(object):
         # self.storelist and write them out to disk
         if outfilepath:
             with open_file(outfilepath, mode) as outfile:
+                logging.info("Writing to disk...")
                 outfile.write(self.get_header())
                 for obj in self:
                     line = self.obj_to_str(obj)
@@ -201,6 +209,7 @@ class BaseFile(object):
             if self.is_new and os.path.exists(self.filepath):
                 raise CancerApiException("Output file already exists: {}".format(self.filepath))
             with open_file(self.filepath, "a+") as outfile:
+                logging.info("Writing to disk...")
                 # If the file is new, start with header
                 if self.is_new:
                     outfile.write(self.get_header())

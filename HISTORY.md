@@ -10,6 +10,9 @@ Next version
 - Added Factera file type and parser
 - Added PavFinder file type and parser
 - Refactored BaseFile to be more consistent and stable
+	- Common instantiation method to ensure consistent attributes
+	- add_obj now checks if obj is a CancerApiObject
+	- Added buffersize option for files for autoflushing
 
 **Bugfixes**
 
