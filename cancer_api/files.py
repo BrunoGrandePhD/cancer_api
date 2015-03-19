@@ -207,7 +207,6 @@ class BaseFile(object):
                 # Proceed with iterating over storelist
                 for obj in self.storelist:
                     line = self.obj_to_str(obj)
-                    print "line: ", line
                     outfile.write(line)
             # Clear storelist now that they've been written to disk
             self.clear_storelist()
