@@ -112,7 +112,7 @@ class BaseFile(object):
         """Returns filename (root, ext) tuple."""
         filename = os.path.basename(self.filepath)
         # Make sure that long extensions go first (to match the longest available extension)
-        for ext in ("." + x.lower() for x in sorted(self.FILE_EXTENSIONS, len, reverse=True)):
+        for ext in ("." + x.lower() for x in sorted(self.FILE_EXTENSIONS, key=len, reverse=True)):
             if filename.lower().endswith(ext):
                 return (filename[:-len(ext)], ext)
         # If none of the class' file extensions match, just use os.path.splitext
@@ -152,7 +152,7 @@ class BaseFile(object):
         (see BaseFile.HEADER_PREFIX).
         """
         is_header_line = False
-        if line.startswith(cls.HEADER_PREFIX):
+        if cls.HEADER_PREFIX and line.startswith(cls.HEADER_PREFIX):
             is_header_line = True
         return is_header_line
 
@@ -295,12 +295,11 @@ class FastqFile(BaseFile):
         quartets (groups of four lines).
         """
         # Iterate over quartets (non-header lines)
-        source = self._source
         with self._open() as infile:
             current_quartet = ""
             for line in infile:
                 # Skip header lines
-                if source.is_header_line(line):
+                if self.source.is_header_line(line):
                     continue
                 # Add line to quartet
                 current_quartet += line
@@ -310,7 +309,7 @@ class FastqFile(BaseFile):
                     continue
                 # Once the quartet has four lines, it will continue on
                 # to being parsed
-                obj = source.parser.parse(current_quartet)
+                obj = self.source.parser.parse(current_quartet)
                 if obj:
                     yield obj
                 current_quartet = ""
