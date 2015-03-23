@@ -77,11 +77,11 @@ class BaseFile(object):
         Otherwise, parse file on disk if filepath is specified.
         If not, return default header for current file type.
         """
-        if self.is_new and self.source is self:
-            # It's a file create with the `new` method
+        if self.is_new:
+            # It's a file create with the `new` or `convert` methods
             header = self.DEFAULT_HEADER
-        elif (self.is_new and self.source is not self) or not self.is_new:
-            # It's a file created with the `convert` or `open` methods
+        else:
+            # It's a file created with the `open` method
             with self._open() as infile:
                 header = ""
                 for line in infile:
@@ -189,7 +189,7 @@ class BaseFile(object):
             with open_file(outfilepath, mode) as outfile:
                 logging.info("Writing to disk...")
                 outfile.write(self.get_header())
-                for obj in self:
+                for obj in self.source:
                     line = self.obj_to_str(obj)
                     outfile.write(line)
                 for obj in self.storelist:
@@ -213,6 +213,12 @@ class BaseFile(object):
                 # If the file is new, start with header
                 if self.is_new:
                     outfile.write(self.get_header())
+                # If file is new and source is not self (i.e., converted file),
+                # iterate over source
+                if self.is_new and self.source is not self:
+                    for obj in self.source:
+                        line = self.obj_to_str(obj)
+                        outfile.write(line)
                 # Proceed with iterating over storelist
                 for obj in self.storelist:
                     line = self.obj_to_str(obj)
