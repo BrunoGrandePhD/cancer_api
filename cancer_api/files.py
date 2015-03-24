@@ -61,6 +61,7 @@ class BaseFile(object):
             raise CancerApiException("Must pass cancer_api file object as `other_file`.")
         obj = cls._init(filepath=filepath, parser_cls=None, other_file=other_file, is_new=True,
                         buffersize=buffersize)
+        obj.write()
         return obj
 
     @classmethod
