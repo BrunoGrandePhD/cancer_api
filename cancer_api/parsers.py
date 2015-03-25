@@ -5,35 +5,9 @@ This submodule contains all parsers used by the file classes
 in the files submodule.
 """
 
+from base import BaseParser
 from mutations import SingleNucleotideVariant, Indel, StructuralVariation
 from misc import GenomicInterval, RawRead
-
-
-class BaseParser(object):
-    """Base file parser for defining necessary methods."""
-
-    def __init__(self, file):
-        """Store related file internally."""
-        self.file = file
-
-    def basic_parse(self, line):
-        """The basic_parse method serves to create
-        a dictionary of (column name, value) pairs.
-        This is to provide a common base for all
-        derivative parsers.
-
-        Returns a dict of (column name, value) pairs.
-        """
-        raise NotImplementedError
-
-    def parse(self, line):
-        """The parse method is user-facing and serves
-        to return object instances as opposed to the
-        dictionaries returned by _parse.
-
-        Returns a cancer_api object instance
-        """
-        raise NotImplementedError
 
 
 class VcfParser(BaseParser):
