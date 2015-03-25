@@ -2,17 +2,18 @@ Release History
 ===============
 
 
-Next version
+0.2.0 (2015-03-24)
 ------------------
 
 **Features and Enhancements**
 
 - Added Factera file type and parser
-- Added PavFinder file type and parser
+- Added PavFinder VCF file type and parser
 - Refactored BaseFile to be more consistent and stable
 	- Common instantiation method to ensure consistent attributes
 	- add_obj now checks if obj is a CancerApiObject
 	- Added buffersize option for files for autoflushing
+	- Converted files automatically write out to disk
 
 **Bugfixes**
 
