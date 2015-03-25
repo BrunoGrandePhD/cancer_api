@@ -9,6 +9,7 @@ external usage.
 import sys
 import logging
 import time
+import gzip
 
 
 def setup_logging():
@@ -21,6 +22,26 @@ def setup_logging():
     date_format = '%Y/%m/%d %H:%M:%S'  # 2010/12/12 13:46:36
     logging.basicConfig(format=log_format, level=logging.INFO, datefmt=date_format,
                         stream=sys.stderr)
+
+
+def open_file(filepath, mode="r", *args, **kwargs):
+    """Wrapper for file open() function.
+    Purpose: to catch gzipped files and handle them
+    accordingly by using the gzip module.
+    """
+    opened_file = None
+    if filepath.endswith(".gz"):
+        # Ensure that "b" is in the mode
+        if "b" not in mode:
+            mode += "b"
+        # Override compression level default (9 -> 6)
+        # if not specified
+        if "compresslevel" not in kwargs:
+            kwargs["compresslevel"] = 6
+        opened_file = gzip.open(filepath, mode, *args, **kwargs)
+    else:
+        opened_file = open(filepath, mode, *args, **kwargs)
+    return opened_file
 
 
 class Chronometer(object):
