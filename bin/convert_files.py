@@ -41,9 +41,9 @@ def main():
     # ========================================================================================== #
 
     # Retrieve cancer_api objects for file type and parser
-    input_type = getattr(cancer_api.files, args.input_type[0], None)
-    input_parser = getattr(cancer_api.parsers, args.input_parser[0], None)
-    output_type = getattr(cancer_api.files, args.output_type[0], None)
+    input_type = getattr(cancer_api, args.input_type[0], None)
+    input_parser = getattr(cancer_api, args.input_parser[0], None)
+    output_type = getattr(cancer_api, args.output_type[0], None)
     if input_type is None or input_parser is None or output_type is None:
         raise ValueError("Unsupported file type or parser. Check `cancer_api` for supported "
                          "file types (`files` submodule) and parsers (`parsers` submodule).")
