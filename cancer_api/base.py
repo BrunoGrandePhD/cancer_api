@@ -128,6 +128,7 @@ class BaseFile(object):
     DEFAULT_HEADER = ""
     HEADER_PREFIX = "#"
     FILE_EXTENSIONS = ["txt"]
+    COMPRESSION_EXTENSIONS = ["gz", "bz"]
 
     def __init__(self, *args, **kwargs):
         """Can't initialize directly."""
@@ -222,11 +223,15 @@ class BaseFile(object):
         for ext in ("." + x.lower() for x in sorted(self.FILE_EXTENSIONS, key=len, reverse=True)):
             if filename.lower().endswith(ext):
                 return (filename[:-len(ext)], ext)
+            for comp_ext in self.COMPRESSION_EXTENSIONS:
+                new_ext = ext + "." + comp_ext
+                if filename.lower().endswith(new_ext):
+                    return (filename[:-len(new_ext)], new_ext)
         # If none of the class' file extensions match, just use os.path.splitext
         return os.path.splitext(filename)
 
     @classmethod
-    def get_cls_extension(cls):
+    def get_file_extension(cls):
         """Return first extension from cls.FILE_EXTENSIONS.
         Otherwise, returns an error if not available.
         """
