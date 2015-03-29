@@ -67,10 +67,10 @@ def main():
 def convert_file(intype, inparser, outtype, infile, outdir):
     """Convert file from one cancer_api-supported type to another"""
     opened_infile = intype.open(infile, parser_cls=inparser)
-    outfilepath = os.path.join(outdir, "{}.{}".format(opened_infile.filename,
-                               outtype.get_extension()))
-    opened_outfile = outtype.convert(opened_infile)
-    opened_outfile.write(outfilepath)
+    root, ext = opened_infile.split_filename()
+    outfilepath = os.path.join(outdir, "{}.{}".format(root, outtype.get_file_extension()))
+    opened_outfile = outtype.convert(outfilepath, opened_infile)
+    opened_outfile.write()
 
 
 if __name__ == '__main__':
