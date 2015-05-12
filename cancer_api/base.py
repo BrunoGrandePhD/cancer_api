@@ -350,6 +350,12 @@ class BaseFile(object):
             self.source = self
             self.is_new = False
 
+    def close(self):
+        """Ensure that buffer is written out to disk
+        """
+        if len(self.storelist) > 0:
+            self.write()
+
     def __iter__(self):
         """Return instances of the objects
         associated with the current file type.
