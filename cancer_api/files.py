@@ -62,7 +62,7 @@ class FastqFile(BaseFile):
 
     DEFAULT_PARSER_CLS = parsers.FastqParser
     HEADER_PREFIX = None
-    FILE_EXTENSIONS = ["fastq", "fq", "fastq.gz", "fq.gz"]
+    FILE_EXTENSIONS = ["fastq", "fq"]
 
     def __iter__(self):
         """Override __iter__ such that it iterates over

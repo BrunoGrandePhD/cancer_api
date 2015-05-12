@@ -14,6 +14,15 @@ Next version
 - None
 
 
+0.2.1 (2015-03-28)
+------------------
+
+**Bugfixes**
+
+- Fixed (and renamed) method for getting file extension in BaseFile
+- Generalized support for compression file extensions
+
+
 0.2.0 (2015-03-24)
 ------------------
 
