@@ -148,6 +148,7 @@ class BaseFile(object):
         obj.is_new = is_new
         obj.storelist = []
         obj.buffersize = buffersize
+        obj._header = None
         return obj
 
     @classmethod
@@ -185,7 +186,9 @@ class BaseFile(object):
         Otherwise, parse file on disk if filepath is specified.
         If not, return default header for current file type.
         """
-        if self.is_new:
+        if self._header:
+            header = self._header
+        elif self.is_new:
             # It's a file create with the `new` or `convert` methods
             header = self.DEFAULT_HEADER
         else:
@@ -198,6 +201,12 @@ class BaseFile(object):
                     else:
                         break
         return header
+
+    def set_header(self, new_header):
+        """Manually set header of file for next time it is
+        written to disk.
+        """
+        self._header = new_header
 
     @property
     def col_names(self):
