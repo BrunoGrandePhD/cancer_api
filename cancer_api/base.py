@@ -409,18 +409,28 @@ class BaseFile(object):
         if len(self.storelist) > 0:
             self.write()
 
-    def __iter__(self):
-        """Return instances of the objects
-        associated with the current file type.
+    def iterlines(self, include_obj=False):
+        """Iterate over non-comment lines.
+        Provides option to parse line and return
+        object alongside line as tuple.
         """
-        # Iterate over every non-header line in self.source
         with self._open() as infile:
             for line in infile:
                 if self.source.is_header_line(line):
                     continue
-                obj = self.source.parser.parse(line)
-                if obj:
-                    yield obj
+                if include_obj:
+                    obj = self.source.parser.parse(line)
+                    if obj:
+                        yield (line, obj)
+                else:
+                    yield line
+
+    def __iter__(self):
+        """Return instances of the objects
+        associated with the current file type.
+        """
+        for line, obj in iterlines(include_obj=True):
+            yield obj
 
 
 class BaseParser(object):
