@@ -147,7 +147,7 @@ def validate_int(value):
     if isinstance(value, basestring):
         value = int(value)
     else:
-        assert isinstance(value, integer)
+        assert isinstance(value, int)
     return value
 
 
@@ -160,6 +160,7 @@ validators = {
 def configure_listener(class_, key, inst):
     if not hasattr(inst.property, 'columns'):
         return
+
     @event.listens_for(inst, "set", retval=True)
     def set_(instance, value, oldvalue, initiator):
         validator = validators.get(inst.property.columns[0].type.__class__)
