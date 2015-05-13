@@ -19,23 +19,27 @@ class TestStructuralVariation(unittest.TestCase):
     def test_is_overlap(self):
         """Test the is_overlap method for structural variations
         """
-        # Test one position without margin
+        # Test proximity with one position without margin
         self.assertFalse(self.sv1.is_overlap("1", 995))
         self.assertTrue(self.sv1.is_overlap("1", 1000))
-        # Test one position with margin
+        # Test proximity with one position with margin
         self.assertTrue(self.sv1.is_overlap("1", 995, margin=5))
         self.assertTrue(self.sv1.is_overlap("1", 1000, margin=5))
-        # Test two positions without margin
+        # Test proximity with two positions without margin
         self.assertFalse(self.sv1.is_overlap("1", 995, 999))
         self.assertTrue(self.sv1.is_overlap("1", 995, 1001))
-        # Test two positions with margin
+        # Test proximity with two positions with margin
         self.assertTrue(self.sv1.is_overlap("1", 995, 999, margin=5))
         self.assertTrue(self.sv1.is_overlap("1", 995, 1001, margin=5))
-        # Test one position in middle of intra-chromosomal event
+        # Test overlap with two position with inter-chromosomal event
+        self.assertTrue(self.sv1.is_overlap("1", 500, 1500))
+        self.assertFalse(self.sv1.is_overlap("2", 500, 1500))
+        self.assertTrue(self.sv1.is_overlap("2", 1500, 2500))
+        # Test overlap with one position in middle of intra-chromosomal event
         self.assertTrue(self.sv2.is_overlap("3", 1500))
-        # Test two positions in middle of intra-chromosomal event
+        # Test overlap with two positions in middle of intra-chromosomal event
         self.assertTrue(self.sv2.is_overlap("3", 1400, 1600))
-        # Test two positions overlapping with intra-chromosomal event
+        # Test overlap with two positions overlapping with intra-chromosomal event
         self.assertTrue(self.sv2.is_overlap("3", 500, 1500))
         self.assertTrue(self.sv2.is_overlap("3", 1500, 2500))
         self.assertFalse(self.sv2.is_overlap("3", 500, 990))
