@@ -39,6 +39,8 @@ class SingleNucleotideVariant(Mutation):
     ref_count = Column(Integer)
     alt_count = Column(Integer)
 
+    __mapper_args__ = {'polymorphic_identity': 'singlenucleotidevariant'}
+
     mutation = relationship("Mutation", backref="snv")
 
 
@@ -52,6 +54,8 @@ class Indel(Mutation):
     alt_allele = Column(Text)
     ref_count = Column(Integer)
     alt_count = Column(Integer)
+
+    __mapper_args__ = {'polymorphic_identity': 'indel'}
 
     mutation = relationship("Mutation", backref="indel")
 
@@ -67,6 +71,8 @@ class StructuralVariation(Mutation):
     pos2 = Column(Integer)
     strand2 = Column(String(length=1))
     sv_type = Column(Enum("translocation", "inversion", "insertion", "deletion", "duplication"))
+
+    __mapper_args__ = {'polymorphic_identity': 'structuralvariation'}
 
     mutation = relationship("Mutation", backref="sv")
 
@@ -115,5 +121,7 @@ class CopyNumberVariation(Mutation):
     size = Column(Integer)
     fold_change = Column(Float)
     copy_state = Column(Integer)
+
+    __mapper_args__ = {'polymorphic_identity': 'copynumbervariation'}
 
     mutation = relationship("Mutation", backref="cnv")
