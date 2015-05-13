@@ -45,9 +45,9 @@ class CancerApiObject(object):
     @property
     def unique_on(self):
         """List of attributes (as strings) on which each instance should be unique."""
-        if not self._unique_on:
+        if not getattr(self, "_unique_on", None):
             raise NotImplementedError("The unique_on` attribute hasn't been implemented "
-                                      "for this class (i.e. {}).".format(cls.__name__))
+                                      "for this class (i.e. {}).".format(self.__class__.__name__))
         return self._unique_on
 
     @unique_on.setter
@@ -65,6 +65,16 @@ class CancerApiObject(object):
         unique_on = self.unique_on
         is_equal = [getattr(self, attr) == getattr(other, attr) for attr in unique_on]
         return all(is_equal)
+
+    def __repr__(self):
+        """Improve representation of cancer_api objects
+        """
+        attrs = []
+        for col in self.__mapper__.columns._data.iteritems():
+            attr = col[0]
+            if not attr.startswith("_"):
+                attrs.append("{}: {}".format(attr, getattr(self, attr).__repr__()))
+        return "{}(\n\t{}\n)".format(self.__class__.__name__, ",\n\t".join(attrs))
 
 
 class BaseMixin(CancerApiObject):
