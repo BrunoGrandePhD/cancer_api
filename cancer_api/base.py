@@ -10,11 +10,16 @@ import gc
 import logging
 from exceptions import CancerApiException
 from utils import open_file
-from sqlalchemy import UniqueConstraint, Index, Column
+from sqlalchemy import UniqueConstraint, Index, Column, Integer, event
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from exceptions import *
 from main import app
+
+
+# ============================================================================================== #
+# Base Classes and Metaclasses for cancer_api Objects
+# ============================================================================================== #
 
 
 class DeclarativeMetaMixin(DeclarativeMeta):
@@ -78,7 +83,9 @@ class CancerApiObject(object):
 
 
 class BaseMixin(CancerApiObject):
-    """Provides methods to Base"""
+    """Provide methods to Base that are only applicable
+    to mapped classes.
+    """
 
     @declared_attr
     def __tablename__(cls):
@@ -130,6 +137,41 @@ class BaseMixin(CancerApiObject):
 
 
 Base = declarative_base(cls=BaseMixin, metaclass=DeclarativeMetaMixin)
+
+
+# ============================================================================================== #
+# Validators
+# ============================================================================================== #
+
+def validate_int(value):
+    if isinstance(value, basestring):
+        value = int(value)
+    else:
+        assert isinstance(value, integer)
+    return value
+
+
+validators = {
+    Integer: validate_int
+}
+
+
+@event.listens_for(Base, 'attribute_instrument')
+def configure_listener(class_, key, inst):
+    if not hasattr(inst.property, 'columns'):
+        return
+    @event.listens_for(inst, "set", retval=True)
+    def set_(instance, value, oldvalue, initiator):
+        validator = validators.get(inst.property.columns[0].type.__class__)
+        if validator:
+            return validator(value)
+        else:
+            return value
+
+
+# ============================================================================================== #
+# Base Classes for Files and Parsers
+# ============================================================================================== #
 
 
 class BaseFile(object):
