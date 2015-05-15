@@ -7,7 +7,7 @@ Next version
 
 **Features and Enhancements**
 
-- Implemented method to check for overlap with genomic region for SVs
+- Implemented method to check for overlap with genomic region for SVs and SNVs
 - Added ability to specify header, e.g., useful for reproducing VCF header
 
 **Bugfixes**
