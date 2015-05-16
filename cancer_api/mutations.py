@@ -8,6 +8,7 @@ in cancer, notably SNVs, indels, CNVs and SVs.
 from sqlalchemy import Column, Integer, String, Text, Float, Enum, ForeignKey
 from sqlalchemy.orm import relationship
 from base import Base
+from misc import GenomicInterval
 
 
 class Mutation(Base):
@@ -46,21 +47,9 @@ class SingleNucleotideVariant(Mutation):
     def is_overlap(self, chrom, pos1, pos2=None, margin=0):
         """Return whether given position overlaps with SNV.
         """
-        # Ensure same chrom
-        if self.chrom != chrom:
-            return False
-        # If one position is given
-        is_overlap = False
-        if not pos2:
-            is_overlap = self.pos >= pos1 - margin and self.pos <= pos1 + margin
-        # If two positions given, check if SNV is between both positions
-        else:
-            # Ensure that pos1 < pos2
-            if not pos1 < pos2:
-                pos1, pos2 = pos2, pos1
-            # Check if between
-            is_overlap = self.pos >= pos1 - margin and self.pos <= pos2 + margin
-        return is_overlap
+        interval1 = GenomicInterval(self.chrom, self.pos)
+        interval2 = GenomicInterval(chrom, pos1, pos2)
+        return interval1.is_overlap(interval2)
 
 
 class Indel(Mutation):

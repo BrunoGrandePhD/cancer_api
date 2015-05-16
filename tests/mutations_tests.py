@@ -1,6 +1,25 @@
 import unittest
-from nose.tools import *
 import cancer_api as ca
+
+
+class TestSingleNucleotideVariant(unittest.TestCase):
+
+    def setUp(self):
+        """Create SNVs for testing
+        """
+        self.sv1 = ca.SingleNucleotideVariant(chrom="1", pos=1000, ref_allele="A", alt_allele="G",
+                                              ref_count=10, alt_count=10)
+        self.sv2 = ca.SingleNucleotideVariant(chrom="1", pos=1000, ref_allele="A", alt_allele="C",
+                                              ref_count=10, alt_count=10)
+        self.sv3 = ca.SingleNucleotideVariant(chrom="1", pos=1001, ref_allele="T", alt_allele="G",
+                                              ref_count=10, alt_count=10)
+        self.sv4 = ca.SingleNucleotideVariant(chrom="2", pos=1000, ref_allele="A", alt_allele="G",
+                                              ref_count=10, alt_count=10)
+
+    def test_is_overlap(self):
+        """Test is_overlap method
+        """
+        pass
 
 
 class TestStructuralVariation(unittest.TestCase):
