@@ -21,6 +21,9 @@ class GenomicInterval(CancerApiObject):
             self.end_pos = int(end_pos)
         else:
             self.end_pos = int(start_pos)
+        # Ensure that start < end
+        if not self.start_pos <= self.end_pos:
+            self.start_pos, self.end_pos = self.end_pos, self.start_pos
 
     @property
     def length(self):
@@ -32,6 +35,9 @@ class GenomicInterval(CancerApiObject):
         # Check if on same chromosome
         if self.chrom != other.chrom:
             return False
+
+        print self
+        print other
 
         # Define function to check is position is in range
         def is_intra(range_start, range_end, query_pos, margin):

@@ -75,10 +75,13 @@ class CancerApiObject(object):
         """Improve representation of cancer_api objects
         """
         attrs = []
-        for col in self.__mapper__.columns._data.iteritems():
-            attr = col[0]
+        if getattr(self, "__mapper__", None):
+            attr_list = [col[0] for col in self.__mapper__.columns._data.iteritems()]
+        else:
+            attr_list = vars(self).keys()
+        for attr in attr_list:
             if not attr.startswith("_"):
-                attrs.append("{}: {}".format(attr, getattr(self, attr).__repr__()))
+                attrs.append("{}: {}".format(attr, getattr(self, attr, None).__repr__()))
         return "{}(\n\t{}\n)".format(self.__class__.__name__, ",\n\t".join(attrs))
 
 

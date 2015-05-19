@@ -33,6 +33,8 @@ class TestGenomicInterval(unittest.TestCase):
         self.gi11 = ca.GenomicInterval("1", 1500, 1510)
         # Single position interval nearby a two-position interval
         self.gi12 = ca.GenomicInterval("1", 990)
+        # Same as gi4, but positions reversed
+        self.gi13 = ca.GenomicInterval("1", 2000, 1000)
 
     def test_is_overlap(self):
         """Test is_overlap method.
@@ -59,3 +61,6 @@ class TestGenomicInterval(unittest.TestCase):
         self.assertFalse(self.gi4.is_overlap(self.gi12))
         self.assertFalse(self.gi4.is_overlap(self.gi12, margin=9))
         self.assertTrue(self.gi4.is_overlap(self.gi12, margin=10))
+        # Check that start position is less than end position
+        self.assertTrue(self.gi13.is_overlap(self.gi10))
+        self.assertTrue(self.gi13.is_overlap(self.gi11))
