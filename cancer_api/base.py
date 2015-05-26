@@ -432,7 +432,7 @@ class BaseFile(object):
         """Return instances of the objects
         associated with the current file type.
         """
-        for line, obj in iterlines(include_obj=True):
+        for line, obj in self.iterlines(include_obj=True):
             yield obj
 
 
