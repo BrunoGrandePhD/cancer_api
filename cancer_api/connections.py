@@ -6,55 +6,15 @@ connections, used in the main submodule.
 """
 
 from sqlalchemy import create_engine
-from base import Base
-from exceptions import NotConnectedToDatabase
 
 
 class DatabaseConnection(object):
     """Base class for database connections"""
 
-    def __init__(self, url=None):
-        if url:
-            self.engine = create_engine(url)
-
-    @property
-    def session(self):
-        try:
-            self._session
-        except AttributeError:
-            raise NotConnectedToDatabase("Database connection needed. "
-                                         "See `cancer_api.connect` function")
-        return self._session
-
-    @session.setter
-    def session(self, value):
-        self._session = value
-
-    @session.deleter
-    def session(self):
-        self.close()
-        del self._session
-
-    def close(self):
-        """Close database connection"""
-        self._session.close()
-
-    def commit(self):
-        """Commit the pending transaction"""
-        self.session.commit()
-
-    def create_tables(self):
-        """Creates all tables according to base"""
-        Base.metadata.create_all(self.engine)
-
-    def drop_tables(self):
-        """Creates all tables according to base"""
-        Base.metadata.drop_all(self.engine)
+    def __init__(self, url):
+        self.engine = create_engine(url)
 
     def __repr__(self):
-        return str(vars(self))
-
-    def __str__(self):
         return str(vars(self))
 
 

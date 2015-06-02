@@ -60,10 +60,9 @@ def main():
 
     # Establish connection with cancer_db instance
     logging.info('Connecting to cancer database...')
-    db_cnx = cancer_api.connect(cancer_api.MysqlConnection(args.db_host, args.db_user,
-                            args.db_password, args.db_name))
-    db_session = db_cnx.session
-    db_cnx.create_tables()
+    db_sess = cancer_api.Session(cancer_api.MysqlConnection(
+        args.db_host, args.db_user, args.db_password, args.db_name))
+    db_sess.create_tables()
 
     # Create output directory if doesn't exist
     if not os.path.exists(args.cache_dir):
@@ -109,11 +108,11 @@ def main():
         }
         if args.fast_mode:
             gene = cancer_api.Gene(**gene_dict)
-            gene.add()
+            db_sess.add(gene)
         else:
             cancer_api.Gene.get_or_create(**gene_dict)
         gene_counter += 1
-    db_cnx.commit()
+    db_sess.commit()
     logging.info('Finished loading {} genes into the database.'.format(gene_counter))
 
     # For transcript and exon tables
@@ -231,14 +230,14 @@ def main():
 
         # Obtain gene ID for given gene Ensembl ID
         gene_ensembl_id = transcript_dict.pop("gene_ensembl_id")
-        gene_id, = db_session.query(cancer_api.Gene.id).filter_by(
+        gene_id, = db_sess.query(cancer_api.Gene.id).filter_by(
             gene_ensembl_id=gene_ensembl_id).first()
         transcript_dict["gene_id"] = gene_id
 
         # Add transcript to database
         if args.fast_mode:
             transcript = cancer_api.Transcript(**transcript_dict)
-            transcript.add()
+            db_sess.add(transcript)
         else:
             transcript = cancer_api.Transcript.get_or_create(**transcript_dict)
         transcript_counter += 1
@@ -247,7 +246,7 @@ def main():
             exon['transcript'] = transcript
             all_exons.append(exon)
     # Commit all transcripts in order to get IDs
-    db_session.commit()
+    db_sess.commit()
     # Iterate over all_exons and add them to database using transcript ID
     # Now that the transcripts have IDs
     exon_counter = 0
@@ -259,11 +258,11 @@ def main():
         exon_dict["gene_id"] = transcript.gene_id
         if args.fast_mode:
             exon = cancer_api.Exon(**exon_dict)
-            exon.add()
+            db_sess.add(exon)
         else:
             exon = cancer_api.Exon.get_or_create(**exon_dict)
         exon_counter += 1
-    db_session.commit()
+    db_sess.commit()
     logging.info('Finished loading {} transcripts into the database.'.format(transcript_counter))
     logging.info('Finished loading {} exons into the database.'.format(exon_counter))
 
@@ -293,7 +292,7 @@ def main():
         if row_dict['ensembl_peptide_id'] == '' or row_dict['cds_length'] == '':
             continue
         # Obtain related transcript
-        transcript = db_session.query(cancer_api.Transcript).filter_by(
+        transcript = db_sess.query(cancer_api.Transcript).filter_by(
             transcript_ensembl_id=row_dict['ensembl_transcript_id']).first()
         transcript_id = transcript.id
         gene_id = transcript.gene_id
@@ -305,18 +304,18 @@ def main():
         }
         if args.fast_mode:
             protein = cancer_api.Protein(**protein_dict)
-            protein.add()
+            db_sess.add(protein)
         else:
             protein = cancer_api.Protein.get_or_create(**protein_dict)
         protein_counter += 1
-    db_session.commit()
+    db_sess.commit()
     logging.info('Finished loading {} proteins into the database.'.format(protein_counter))
 
     # For protein_region table
     logging.warning('Did not load data into the protein_region table. Not implemented yet.')
 
     # Clean up
-    db_cnx.close()
+    db_sess.close()
     logging.info('Finished loading Ensembl reference data into database.')
 
 

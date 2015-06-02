@@ -11,6 +11,7 @@ import logging
 from exceptions import CancerApiException
 from utils import open_file
 from sqlalchemy import UniqueConstraint, Index, Column, Integer, event
+import sqlalchemy.orm.session as BaseSession
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from exceptions import *
@@ -171,6 +172,26 @@ def configure_listener(class_, key, inst):
             return validator(value)
         else:
             return value
+
+
+# ============================================================================================== #
+# Sessions
+# ============================================================================================== #
+
+class Session(BaseSession.Session):
+    """Add convenience methods to Session"""
+
+    def __init__(self, db_cnx, **kwargs):
+        self.engine = db_cnx.engine
+        super(Session, self).__init__(bind=self.engine, **kwargs)
+
+    def create_tables(self):
+        """Creates all tables according to base"""
+        Base.metadata.create_all(self.engine)
+
+    def drop_tables(self):
+        """Creates all tables according to base"""
+        Base.metadata.drop_all(self.engine)
 
 
 # ============================================================================================== #

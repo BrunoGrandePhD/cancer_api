@@ -56,3 +56,6 @@ target/
 # Sublime Text Files
 *.sublime-project
 *.sublime-workspace
+
+# Config
+tests/tests_config.py

@@ -25,6 +25,8 @@ class Sample(Base):
     sample_type = Column(Enum("normal", "primary", "metastasis", "relapse"))
     patient_id = Column(Integer, ForeignKey("patient.id"))
 
+    patient = relationship("Patient", backref="samples")
+
 
 class Library(Base):
     """Model for libraries"""
@@ -33,3 +35,5 @@ class Library(Base):
     library_name = Column(String(length=100))
     library_type = Column(Enum("genome", "exome", "rnaseq", "mirnaseq", "targeted"))
     sample_id = Column(Integer, ForeignKey("sample.id"))
+
+    sample = relationship("Sample", backref="libraries")

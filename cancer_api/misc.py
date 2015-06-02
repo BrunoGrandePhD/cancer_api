@@ -36,9 +36,6 @@ class GenomicInterval(CancerApiObject):
         if self.chrom != other.chrom:
             return False
 
-        print self
-        print other
-
         # Define function to check is position is in range
         def is_intra(range_start, range_end, query_pos, margin):
             """Check if point is within a given range
