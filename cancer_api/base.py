@@ -15,7 +15,6 @@ import sqlalchemy.orm.session as BaseSession
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from exceptions import *
-from main import app
 
 
 # ============================================================================================== #
@@ -109,39 +108,26 @@ class BaseMixin(CancerApiObject):
         return tuple(addons)
 
     @classmethod
-    def get_or_create(cls, **kwargs):
+    def get_or_create(cls, db_sess, **kwargs):
         """If a model's unique_on class attribute is defined,
         get_or_create will first search the database for an
         existing instance based on the attributes listed in
         unique_on. Otherwise, it will create an instance.
         Note that the session still needs to be committed.
         """
-        # Get session
-        session = app.session
         # Create subset of kwargs according to unique_on
         unique_kwargs = {k: v for k, v in kwargs.iteritems() if k in cls.unique_on}
         # Check if instance already exists based on unique_kwargs
-        filter_query = session.query(cls).filter_by(**unique_kwargs)
-        is_preexisting = session.query(filter_query.exists()).one()[0]
+        filter_query = db_sess.query(cls).filter_by(**unique_kwargs)
+        is_preexisting = db_sess.query(filter_query.exists()).one()[0]
         if is_preexisting:
             # Instance already exists; obtain it and return it
             instance = filter_query.first()
         else:
             # Instance doesn't already exist, so create a new one
             instance = cls(**kwargs)
-            session.add(instance)
+            db_sess.add(instance)
         return instance
-
-    def add(self):
-        """Add self to session"""
-        app.session.add(self)
-        return self
-
-    def save(self):
-        """Add self to session and commit"""
-        self.add()
-        app.session.commit()
-        return self
 
 
 Base = declarative_base(cls=BaseMixin, metaclass=DeclarativeMetaMixin)
