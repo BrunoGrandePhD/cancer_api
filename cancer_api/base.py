@@ -10,7 +10,7 @@ import gc
 import logging
 from exceptions import CancerApiException
 from utils import open_file
-from sqlalchemy import UniqueConstraint, Index, Column, Integer, event
+from sqlalchemy import UniqueConstraint, Index, Column, Integer, Enum, event
 import sqlalchemy.orm.session as BaseSession
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.ext.declarative.api import DeclarativeMeta
@@ -38,6 +38,10 @@ class DeclarativeMetaMixin(DeclarativeMeta):
             unique_on = dict_["unique_on"]
             for attr in unique_on:
                 dict_[attr].nullable = False
+        # Ensure that enums aren't nullable
+        for name, value in dict_.items():
+            if isinstance(value, Column) and isinstance(value.type, Enum):
+                dict_[name].nullable = False
         # Then proceed as usual
         super(DeclarativeMetaMixin, cls).__init__(classname, bases, dict_)
 

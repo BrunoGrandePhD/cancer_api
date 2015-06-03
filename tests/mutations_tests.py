@@ -13,16 +13,16 @@ class TestSingleNucleotideVariant(unittest.TestCase):
         # Create some SNVs
         self.snv1 = ca.SingleNucleotideVariant(chrom="1", pos=1000, ref_allele="A",
                                                alt_allele="G", ref_count=10, alt_count=10,
-                                               library_id=1)
+                                               library_id=1, status="somatic")
         self.snv2 = ca.SingleNucleotideVariant(chrom="1", pos=1000, ref_allele="A",
                                                alt_allele="C", ref_count=10, alt_count=10,
-                                               library_id=1)
+                                               library_id=1, status="somatic")
         self.snv3 = ca.SingleNucleotideVariant(chrom="1", pos=1001, ref_allele="T",
                                                alt_allele="G", ref_count=10, alt_count=10,
-                                               library_id=1)
+                                               library_id=1, status="somatic")
         self.snv4 = ca.SingleNucleotideVariant(chrom="2", pos=1000, ref_allele="A",
                                                alt_allele="G", ref_count=10, alt_count=10,
-                                               library_id=1)
+                                               library_id=1, status="somatic")
 
     def test_add_to_db(self):
         """Test adding SNVs to database"""
@@ -62,11 +62,13 @@ class TestStructuralVariation(unittest.TestCase):
         # Inter-chromosomal SV
         self.sv1 = ca.StructuralVariation(chrom1="1", pos1=1000, strand1="+",
                                           chrom2="2", pos2=2000, strand2="-",
-                                          sv_type="translocation", library_id=1)
+                                          sv_type="translocation", library_id=1,
+                                          status="somatic")
         # Intra-chromosomal SV
         self.sv2 = ca.StructuralVariation(chrom1="3", pos1=1000, strand1="+",
                                           chrom2="3", pos2=2000, strand2="+",
-                                          sv_type="inversion", library_id=1)
+                                          sv_type="inversion", library_id=1,
+                                          status="somatic")
 
     def test_add_to_db(self):
         """Test adding SVs to database"""

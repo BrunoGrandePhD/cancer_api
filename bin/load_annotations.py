@@ -23,11 +23,12 @@ Known Issues
 import argparse
 import cancer_api
 import os
+import getpass
 import requests
 from collections import defaultdict
 import logging
 
-BIOMART_API_URL = 'http://grch37.ensembl.org/biomart/martservice/'
+BIOMART_API_URL = 'http://www.ensembl.org/biomart/martservice/'
 GENE_FIELDNAMES = [
     'ensembl_gene_id', 'hgnc_symbol', 'gene_biotype', 'external_gene_name', 'chromosome_name',
     'start_position', 'end_position']
@@ -44,9 +45,9 @@ def main():
     parser = argparse.ArgumentParser(
         description=('This script loads Ensembl reference data into the cancer database.'))
     parser.add_argument('db_host', help='Database server host')
-    parser.add_argument('db_user', help='Database user')
-    parser.add_argument('db_password', help='Password for user')
     parser.add_argument('db_name', help='Name of target database')
+    parser.add_argument('db_user', help='Database user')
+    parser.add_argument('--db_password', help='Password for user')
     parser.add_argument('--cache_dir', '-o', default='',
                         help='Directory for caching/reloading data')
     parser.add_argument('--fast_mode', '-f', action='store_true',
@@ -57,6 +58,10 @@ def main():
     # Setup logging
     cancer_api.utils.setup_logging()
     logging.info('Initializing script...')
+
+    # Ask for password if not given
+    if not args.db_password:
+        args.db_password = getpass.getpass("Database password (may leave blank): ")
 
     # Establish connection with cancer_db instance
     logging.info('Connecting to cancer database...')
@@ -323,7 +328,7 @@ def query_biomart_api(biomart_url, xml_query):
     """Sends an XML query to a specified BioMart web service.
     Returns body of HTTP response.
     """
-    response = requests.get(biomart_url, params={'query': xml_query})
+    response = requests.post(biomart_url, data="query={}\n".format(xml_query))
     if response.status_code == 200:
         return response.text
     else:
