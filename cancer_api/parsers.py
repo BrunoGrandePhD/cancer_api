@@ -35,9 +35,9 @@ class VcfParser(BaseParser):
             format_attrs = attrs["format"].split(":")
             if len(extra_cols) > 1:
                 attrs["format_dicts"] = OrderedDict()
-                for index, sample in enumerate(extra_cols[9:], start=1):
-                    format_vals = split_line[9 + index].split(":")
-                    attrs["format_dicts"][sample].update(dict(zip(format_attrs, format_vals)))
+                for index, sample in enumerate(extra_cols[1:], start=1):
+                    format_vals = split_line[8 + index].split(":")
+                    attrs["format_dicts"][sample] = dict(zip(format_attrs, format_vals))
         # Parse info column
         info_cols = attrs["info"].split(";")
         info_dict = {}
