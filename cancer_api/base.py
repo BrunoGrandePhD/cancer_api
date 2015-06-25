@@ -10,11 +10,11 @@ import gc
 import logging
 from exceptions import CancerApiException
 from utils import open_file
-from sqlalchemy import UniqueConstraint, Index, Column, Integer, event
+from sqlalchemy import UniqueConstraint, Index, Column, Integer, Enum, event
+import sqlalchemy.orm.session as BaseSession
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from exceptions import *
-from main import app
 
 
 # ============================================================================================== #
@@ -37,6 +37,10 @@ class DeclarativeMetaMixin(DeclarativeMeta):
             unique_on = dict_["unique_on"]
             for attr in unique_on:
                 dict_[attr].nullable = False
+        # Ensure that enums aren't nullable
+        for name, value in dict_.items():
+            if isinstance(value, Column) and isinstance(value.type, Enum):
+                dict_[name].nullable = False
         # Then proceed as usual
         super(DeclarativeMetaMixin, cls).__init__(classname, bases, dict_)
 
@@ -75,10 +79,13 @@ class CancerApiObject(object):
         """Improve representation of cancer_api objects
         """
         attrs = []
-        for col in self.__mapper__.columns._data.iteritems():
-            attr = col[0]
+        if getattr(self, "__mapper__", None):
+            attr_list = [col[0] for col in self.__mapper__.columns._data.iteritems()]
+        else:
+            attr_list = vars(self).keys()
+        for attr in attr_list:
             if not attr.startswith("_"):
-                attrs.append("{}: {}".format(attr, getattr(self, attr).__repr__()))
+                attrs.append("{}: {}".format(attr, getattr(self, attr, None).__repr__()))
         return "{}(\n\t{}\n)".format(self.__class__.__name__, ",\n\t".join(attrs))
 
 
@@ -101,39 +108,26 @@ class BaseMixin(CancerApiObject):
         return tuple(addons)
 
     @classmethod
-    def get_or_create(cls, **kwargs):
+    def get_or_create(cls, db_sess, **kwargs):
         """If a model's unique_on class attribute is defined,
         get_or_create will first search the database for an
         existing instance based on the attributes listed in
         unique_on. Otherwise, it will create an instance.
         Note that the session still needs to be committed.
         """
-        # Get session
-        session = app.session
         # Create subset of kwargs according to unique_on
         unique_kwargs = {k: v for k, v in kwargs.iteritems() if k in cls.unique_on}
         # Check if instance already exists based on unique_kwargs
-        filter_query = session.query(cls).filter_by(**unique_kwargs)
-        is_preexisting = session.query(filter_query.exists()).one()[0]
+        filter_query = db_sess.query(cls).filter_by(**unique_kwargs)
+        is_preexisting = db_sess.query(filter_query.exists()).one()[0]
         if is_preexisting:
             # Instance already exists; obtain it and return it
             instance = filter_query.first()
         else:
             # Instance doesn't already exist, so create a new one
             instance = cls(**kwargs)
-            session.add(instance)
+            db_sess.add(instance)
         return instance
-
-    def add(self):
-        """Add self to session"""
-        app.session.add(self)
-        return self
-
-    def save(self):
-        """Add self to session and commit"""
-        self.add()
-        app.session.commit()
-        return self
 
 
 Base = declarative_base(cls=BaseMixin, metaclass=DeclarativeMetaMixin)
@@ -171,6 +165,26 @@ def configure_listener(class_, key, inst):
 
 
 # ============================================================================================== #
+# Sessions
+# ============================================================================================== #
+
+class Session(BaseSession.Session):
+    """Add convenience methods to Session"""
+
+    def __init__(self, db_cnx, **kwargs):
+        self.engine = db_cnx.engine
+        super(Session, self).__init__(bind=self.engine, **kwargs)
+
+    def create_tables(self):
+        """Creates all tables according to base"""
+        Base.metadata.create_all(self.engine)
+
+    def drop_tables(self):
+        """Creates all tables according to base"""
+        Base.metadata.drop_all(self.engine)
+
+
+# ============================================================================================== #
 # Base Classes for Files and Parsers
 # ============================================================================================== #
 
@@ -188,7 +202,8 @@ class BaseFile(object):
         raise CancerApiException("Please use `open`, `convert` or `new` methods instead.")
 
     @classmethod
-    def _init(cls, filepath=None, parser_cls=None, other_file=None, is_new=False, buffersize=None):
+    def _init(cls, filepath=None, parser_cls=None, other_file=None, is_new=False, buffersize=None,
+              library=None):
         """Initialize BaseFile. Any instantiation of BaseFile should
         go through this method in an attempt to standardize attributes.
         Meant to be used internally only.
@@ -201,37 +216,38 @@ class BaseFile(object):
         obj.is_new = is_new
         obj.storelist = []
         obj.buffersize = buffersize
+        obj.library = library
         obj._header = None
         return obj
 
     @classmethod
-    def open(cls, filepath, parser_cls=None, buffersize=None):
+    def open(cls, filepath, parser_cls=None, buffersize=None, library=None):
         """Instantiate a BaseFile object from an
         existing file on disk.
         """
         obj = cls._init(filepath=filepath, parser_cls=parser_cls, other_file=None, is_new=False,
-                        buffersize=buffersize)
+                        buffersize=buffersize, library=library)
         return obj
 
     @classmethod
-    def convert(cls, filepath, other_file, buffersize=None):
+    def convert(cls, filepath, other_file, buffersize=None, library=None):
         """Instantiate a BaseFile object from another
         BaseFile object.
         """
         if not isinstance(other_file, BaseFile):
             raise CancerApiException("Must pass cancer_api file object as `other_file`.")
         obj = cls._init(filepath=filepath, parser_cls=None, other_file=other_file, is_new=True,
-                        buffersize=buffersize)
+                        buffersize=buffersize, library=library)
         obj.write()
         return obj
 
     @classmethod
-    def new(cls, filepath, buffersize=None):
+    def new(cls, filepath, buffersize=None, library=None):
         """Instantiate a BaseFile object from scratch.
         Useful for adding objects and write them out to disk.
         """
         obj = cls._init(filepath=filepath, parser_cls=None, other_file=None, is_new=True,
-                        buffersize=buffersize)
+                        buffersize=buffersize, library=library)
         return obj
 
     def get_header(self):
@@ -429,7 +445,7 @@ class BaseFile(object):
         """Return instances of the objects
         associated with the current file type.
         """
-        for line, obj in iterlines(include_obj=True):
+        for line, obj in self.iterlines(include_obj=True):
             yield obj
 
 

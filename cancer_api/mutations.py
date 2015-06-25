@@ -7,10 +7,11 @@ in cancer, notably SNVs, indels, CNVs and SVs.
 
 from sqlalchemy import Column, Integer, String, Text, Float, Enum, ForeignKey
 from sqlalchemy.orm import relationship
-from base import Base
+import base
+import misc
 
 
-class Mutation(Base):
+class Mutation(base.Base):
     """Base class for all mutations"""
 
     id = Column(Integer, primary_key=True)
@@ -39,28 +40,16 @@ class SingleNucleotideVariant(Mutation):
     ref_count = Column(Integer)
     alt_count = Column(Integer)
 
-    __mapper_args__ = {'polymorphic_identity': 'singlenucleotidevariant'}
+    __mapper_args__ = {'polymorphic_identity': 'snv'}
 
     mutation = relationship("Mutation", backref="snv")
 
     def is_overlap(self, chrom, pos1, pos2=None, margin=0):
         """Return whether given position overlaps with SNV.
         """
-        # Ensure same chrom
-        if self.chrom != chrom:
-            return False
-        # If one position is given
-        is_overlap = False
-        if not pos2:
-            is_overlap = self.pos >= pos1 - margin and self.pos <= pos1 + margin
-        # If two positions given, check if SNV is between both positions
-        else:
-            # Ensure that pos1 < pos2
-            if not pos1 < pos2:
-                pos1, pos2 = pos2, pos1
-            # Check if between
-            is_overlap = self.pos >= pos1 - margin and self.pos <= pos2 + margin
-        return is_overlap
+        snv_interval = misc.GenomicInterval(self.chrom, self.pos)
+        query_interval = misc.GenomicInterval(chrom, pos1, pos2)
+        return snv_interval.is_overlap(query_interval, margin)
 
 
 class Indel(Mutation):
@@ -90,10 +79,35 @@ class StructuralVariation(Mutation):
     pos2 = Column(Integer)
     strand2 = Column(String(length=1))
     sv_type = Column(Enum("translocation", "inversion", "insertion", "deletion", "duplication"))
+    t_ref_count = Column(Integer)
+    n_ref_count = Column(Integer)
+    t_alt_count = Column(Integer)
+    n_alt_count = Column(Integer)
+    t_ref_spanning_reads = Column(Integer)
+    n_ref_spanning_reads = Column(Integer)
+    t_ref_read_pairs = Column(Integer)
+    n_ref_read_pairs = Column(Integer)
+    t_alt_spanning_reads = Column(Integer)
+    n_alt_spanning_reads = Column(Integer)
+    t_alt_read_pairs = Column(Integer)
+    n_alt_read_pairs = Column(Integer)
 
-    __mapper_args__ = {'polymorphic_identity': 'structuralvariation'}
+    __mapper_args__ = {'polymorphic_identity': 'sv'}
 
     mutation = relationship("Mutation", backref="sv")
+
+    def predict_effects(self, db_sess):
+        """Predict the effect of the SV
+        """
+        effects = []
+        # First, consider structural effects
+        if self.sv_type in ["translocation", "inversion"]:
+            pass
+        # Second, consider copy number effects
+        if self.sv_type in ["duplication", "deletion"]:
+            pass
+        # Return effects
+        return effects
 
     def is_overlap(self, chrom, pos1, pos2=None, margin=0):
         """Return whether the given position overlap with
@@ -101,33 +115,16 @@ class StructuralVariation(Mutation):
         The margin defines how close the events can be to
         be considered overlapping (e.g., within 10 bp).
         """
-        # Ensure that pos1 < pos2
-        if pos2 and not pos1 < pos2:
-            pos1, pos2 = pos2, pos1
-        # Check proximity to breakpoints
-        is_overlap_inter = False
-        breakpoints = [(self.chrom1, self.pos1), (self.chrom2, self.pos2)]
-        if pos2:
-            is_overlap_inter = any([sv_chrom == chrom and (sv_pos >= pos1 - margin and
-                                                           sv_pos <= pos2 + margin)
-                                    for sv_chrom, sv_pos in breakpoints])
+        query_interval = misc.GenomicInterval(chrom, pos1, pos2)
+        if self.chrom1 == self.chrom2:
+            sv_interval = misc.GenomicInterval(self.chrom1, self.pos1, self.pos2)
+            is_overlap = sv_interval.is_overlap(query_interval, margin)
         else:
-            is_overlap_inter = any([sv_chrom == chrom and (sv_pos >= pos1 - margin and
-                                                           sv_pos <= pos1 + margin)
-                                    for sv_chrom, sv_pos in breakpoints])
-        # Check overlap with intra-chromosomal events (e.g., in middle of inversion)
-        is_overlap_intra = False
-        if chrom == self.chrom1 and self.chrom1 == self.chrom2:
-            # Ensure that sv_pos1 < sv_pos2
-            sv_pos1, sv_pos2 = self.pos1, self.pos2
-            if not sv_pos1 < sv_pos2:
-                sv_pos1, sv_pos2 = sv_pos2, sv_pos1
-            is_overlap_intra = (sv_pos1 <= pos1 + margin and sv_pos2 >= pos1 - margin)
-            if pos2:
-                is_overlap_intra = is_overlap_intra or (sv_pos1 <= pos2 + margin and
-                                                        sv_pos2 >= pos2 - margin)
-        # Return True if any are True
-        return is_overlap_inter or is_overlap_intra
+            sv_interval1 = misc.GenomicInterval(self.chrom1, self.pos1)
+            sv_interval2 = misc.GenomicInterval(self.chrom2, self.pos2)
+            is_overlap = (sv_interval1.is_overlap(query_interval, margin) or
+                          sv_interval2.is_overlap(query_interval, margin))
+        return is_overlap
 
 
 class CopyNumberVariation(Mutation):
@@ -141,6 +138,6 @@ class CopyNumberVariation(Mutation):
     fold_change = Column(Float)
     copy_state = Column(Integer)
 
-    __mapper_args__ = {'polymorphic_identity': 'copynumbervariation'}
+    __mapper_args__ = {'polymorphic_identity': 'cnv'}
 
     mutation = relationship("Mutation", backref="cnv")
