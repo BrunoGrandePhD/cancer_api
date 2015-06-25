@@ -5,7 +5,7 @@ This submodule contains all classes representing metadata
 entities, such as patients, samples and derived DNA libraries.
 """
 
-from sqlalchemy import Column, Integer, String, Enum, ForeignKey
+from sqlalchemy import Column, Integer, Float, String, Enum, ForeignKey
 from sqlalchemy.orm import relationship
 from base import Base
 
@@ -25,6 +25,8 @@ class Sample(Base):
     sample_type = Column(Enum("normal", "primary", "metastasis", "relapse"))
     patient_id = Column(Integer, ForeignKey("patient.id"))
 
+    patient = relationship("Patient", backref="samples")
+
 
 class Library(Base):
     """Model for libraries"""
@@ -33,3 +35,6 @@ class Library(Base):
     library_name = Column(String(length=100))
     library_type = Column(Enum("genome", "exome", "rnaseq", "mirnaseq", "targeted"))
     sample_id = Column(Integer, ForeignKey("sample.id"))
+    tumour_content = Column(Float)
+
+    sample = relationship("Sample", backref="libraries")

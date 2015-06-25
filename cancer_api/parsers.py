@@ -5,6 +5,7 @@ This submodule contains all parsers used by the file classes
 in the files submodule.
 """
 
+from collections import OrderedDict
 from base import BaseParser
 from mutations import SingleNucleotideVariant, Indel, StructuralVariation
 from misc import GenomicInterval, RawRead
@@ -31,6 +32,12 @@ class VcfParser(BaseParser):
             extra_cols[0] = "format"  # ensure lowercase for format
             cols = self.BASE_COLUMNS + extra_cols
             attrs.update(dict(zip(cols, split_line)))
+            format_attrs = attrs["format"].split(":")
+            if len(extra_cols) > 1:
+                attrs["format_dicts"] = OrderedDict()
+                for index, sample in enumerate(extra_cols[9:], start=1):
+                    format_vals = split_line[9 + index].split(":")
+                    attrs["format_dicts"][sample].update(dict(zip(format_attrs, format_vals)))
         # Parse info column
         info_cols = attrs["info"].split(";")
         info_dict = {}
@@ -62,6 +69,14 @@ class VcfParser(BaseParser):
         else:
             mutation = Indel(**mutation_dict)
         return mutation
+
+
+class StrelkaVcfParser(VcfParser):
+    """Parser for Strelka SNV and indels files."""
+
+    def parse(self, line):
+        """Parse line from
+        """
 
 
 class DellyVcfParser(VcfParser):

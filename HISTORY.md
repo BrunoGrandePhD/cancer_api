@@ -2,6 +2,19 @@ Release History
 ===============
 
 
+0.2.2 (2015-06-25)
+------------------
+
+**Features and Enhancements**
+
+- Implemented method to check for overlap with genomic region for SVs and SNVs
+- Added ability to specify header, e.g., useful for reproducing VCF header
+
+**Bugfixes**
+
+- Fixed convert_files.py script to use new BaseFile methods
+
+
 0.2.1 (2015-03-28)
 ------------------
 
