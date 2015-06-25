@@ -11,6 +11,6 @@ deploy:
   password:
     secure: lAtTLDLcEfnRSfiK+BB79Y4Ue8ohFO/W8Azu7Fd8eyGECysyciqzkKy2XnAwcm4Inv2htqzIp+a1HSqmOMT1lqjBKHOx92i1R9rNqGejIMACB6tF86MspkPVLOwXuG60TDd5Mnc85D17wLb+RHtc7BLPV5QFo6EKX7s4nN2kf5I=
   on:
-    tags: true
     repo: brunogrande/cancer_api
+    branch: master
   distributions: "sdist bdist_wheel"

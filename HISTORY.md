@@ -2,6 +2,14 @@ Release History
 ===============
 
 
+0.2.3 (2015-06-25)
+------------------
+
+**Bugfixes**
+
+- Fixed Travis auto-deploy to PyPI
+
+
 0.2.2 (2015-06-25)
 ------------------
 
