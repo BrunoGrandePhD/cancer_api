@@ -2,6 +2,18 @@ Release History
 ===============
 
 
+Next Version
+------------------
+
+**Features and Enhancements**
+
+- None
+
+**Bugfixes**
+
+- Re-enabled check for tagged commits for Travis auto-deploy
+
+
 0.2.3 (2015-06-25)
 ------------------
 
