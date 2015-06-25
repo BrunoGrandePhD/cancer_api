@@ -80,6 +80,10 @@ class TestStructuralVariation(unittest.TestCase):
         # Check if db is populated
         self.assertEqual(session.query(ca.StructuralVariation).count(), 2)
 
+    def test_predict_effects(self):
+        """Testing effect prediction for SVs
+        """
+
     def test_is_overlap(self):
         """Test the is_overlap method for structural variations
         """

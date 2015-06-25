@@ -202,7 +202,8 @@ class BaseFile(object):
         raise CancerApiException("Please use `open`, `convert` or `new` methods instead.")
 
     @classmethod
-    def _init(cls, filepath=None, parser_cls=None, other_file=None, is_new=False, buffersize=None):
+    def _init(cls, filepath=None, parser_cls=None, other_file=None, is_new=False, buffersize=None,
+              library=None):
         """Initialize BaseFile. Any instantiation of BaseFile should
         go through this method in an attempt to standardize attributes.
         Meant to be used internally only.
@@ -215,37 +216,38 @@ class BaseFile(object):
         obj.is_new = is_new
         obj.storelist = []
         obj.buffersize = buffersize
+        obj.library = library
         obj._header = None
         return obj
 
     @classmethod
-    def open(cls, filepath, parser_cls=None, buffersize=None):
+    def open(cls, filepath, parser_cls=None, buffersize=None, library=None):
         """Instantiate a BaseFile object from an
         existing file on disk.
         """
         obj = cls._init(filepath=filepath, parser_cls=parser_cls, other_file=None, is_new=False,
-                        buffersize=buffersize)
+                        buffersize=buffersize, library=library)
         return obj
 
     @classmethod
-    def convert(cls, filepath, other_file, buffersize=None):
+    def convert(cls, filepath, other_file, buffersize=None, library=None):
         """Instantiate a BaseFile object from another
         BaseFile object.
         """
         if not isinstance(other_file, BaseFile):
             raise CancerApiException("Must pass cancer_api file object as `other_file`.")
         obj = cls._init(filepath=filepath, parser_cls=None, other_file=other_file, is_new=True,
-                        buffersize=buffersize)
+                        buffersize=buffersize, library=library)
         obj.write()
         return obj
 
     @classmethod
-    def new(cls, filepath, buffersize=None):
+    def new(cls, filepath, buffersize=None, library=None):
         """Instantiate a BaseFile object from scratch.
         Useful for adding objects and write them out to disk.
         """
         obj = cls._init(filepath=filepath, parser_cls=None, other_file=None, is_new=True,
-                        buffersize=buffersize)
+                        buffersize=buffersize, library=library)
         return obj
 
     def get_header(self):
