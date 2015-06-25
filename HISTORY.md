@@ -2,7 +2,7 @@ Release History
 ===============
 
 
-Next version
+0.2.2 (2015-06-25)
 ------------------
 
 **Features and Enhancements**
@@ -12,7 +12,7 @@ Next version
 
 **Bugfixes**
 
-- None
+- Fixed convert_files.py script to use new BaseFile methods
 
 
 0.2.1 (2015-03-28)
