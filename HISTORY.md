@@ -2,6 +2,15 @@ Release History
 ===============
 
 
+Next Version
+------------------
+
+**Bugfixes**
+
+- Re-enabled check for tagged commits for Travis auto-deploy
+- Fixed bug in DELLY parsing code
+
+
 0.2.3 (2015-06-25)
 ------------------
 
